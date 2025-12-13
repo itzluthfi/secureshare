@@ -47,6 +47,9 @@ Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
 // Team
 Route::get('/team', [TeamController::class, 'index'])->name('team');
 
+// Calendar
+Route::view('/calendar', 'calendar')->name('calendar');
+
 // Admin routes
 Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
 Route::get('/admin/audit-logs', [AdminController::class, 'auditLogs'])->name('admin.audit-logs');

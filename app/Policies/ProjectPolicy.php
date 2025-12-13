@@ -29,7 +29,7 @@ class ProjectPolicy
      */
     public function create(User $user): bool
     {
-        // Managers and admins can create projects
+        // Only admin and manager can create projects
         return $user->isAdmin() || $user->isManager();
     }
 

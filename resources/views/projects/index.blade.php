@@ -5,7 +5,11 @@
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1>Projects</h1>
-    <a href="{{ route('projects.create') }}" class="btn btn-primary">+ New Project</a>
+    @auth
+        @if(auth()->user()->isAdmin() || auth()->user()->isManager())
+            <a href="{{ route('projects.create') }}" class="btn btn-primary">+ New Project</a>
+        @endif
+    @endauth
 </div>
 
 <div id="projectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">

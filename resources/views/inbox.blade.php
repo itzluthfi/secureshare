@@ -9,6 +9,9 @@
 </div>
 
 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+    <button class="btn btn-primary btn-sm" onclick="markSelectedAsRead()" id="markSelectedBtn" style="display: none;">
+        <i class="fas fa-check"></i> Mark Selected as Read
+    </button>
     <button class="btn btn-secondary btn-sm" onclick="markAllAsRead()">
         <i class="fas fa-check-double"></i> Mark All as Read
     </button>
@@ -204,7 +207,7 @@ function renderNotifications(notifications) {
         const iconClass = getNotificationIcon(notif.type);
         const iconType = getNotificationType(notif.type);
         const time = formatTime(notif.created_at);
-        const data = JSON.parse(notif.data || '{}');
+        const data = notif.data ||{};
         const isPendingInvitation = notif.type === 'project_invitation' && data.action_required;
         
         html += `

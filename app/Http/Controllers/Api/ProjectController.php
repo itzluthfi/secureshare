@@ -22,6 +22,14 @@ class ProjectController extends Controller
 
     /**
      * Display a listing of projects
+     * 
+     * @OA\Get(
+     *     path="/projects",
+     *     tags={"Projects"},
+     *     summary="List all projects",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Projects list")
+     * )
      */
     public function index(Request $request)
     {
@@ -42,7 +50,23 @@ class ProjectController extends Controller
     }
 
     /**
-     * Store a newly created project
+     * Create new project
+     * 
+     * @OA\Post(
+     *     path="/projects",
+     *     tags={"Projects"},
+     *     summary="Create new project",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", example="My Project"),
+     *             @OA\Property(property="description", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Project created")
+     * )
      */
     public function store(Request $request)
     {
@@ -76,7 +100,16 @@ $project->members()->attach($request->user()->id, [
     }
 
     /**
-     * Display the specified project
+     * Get project details
+     * 
+     * @OA\Get(
+     *     path="/projects/{id}",
+     *     tags={"Projects"},
+     *     summary="Get project details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Project details")
+     * )
      */
     public function show($id)
     {
@@ -88,7 +121,22 @@ $project->members()->attach($request->user()->id, [
     }
 
     /**
-     * Update the specified project
+     * Update project
+     * 
+     * @OA\Put(
+     *     path="/projects/{id}",
+     *     tags={"Projects"},
+     *     summary="Update project",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="description", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Project updated")
+     * )
      */
     public function update(Request $request, Project $project)
     {
@@ -113,7 +161,16 @@ $project->members()->attach($request->user()->id, [
     }
 
     /**
-     * Remove the specified project
+     * Delete project
+     * 
+     * @OA\Delete(
+     *     path="/projects/{id}",
+     *     tags={"Projects"},
+     *     summary="Delete project",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Project deleted")
+     * )
      */
     public function destroy(Request $request, Project $project)
     {

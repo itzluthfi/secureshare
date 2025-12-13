@@ -8,21 +8,29 @@ use App\Models\User;
 class TaskPolicy
 {
     /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the user can view the model.
      */
     public function view(User $user, Task $task): bool
     {
-        // Admin or project member
-        return $user->isAdmin() || $user->canAccessProject($task->project_id);
+        // Can view if member of the project
+        return $user->isAdmin() || $task->project->hasMember($user->id);
     }
 
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user, $projectId): bool
+    public function create(User $user): bool
     {
-        // Must be a member of the project
-        return $user->isAdmin() || $user->canAccessProject($projectId);
+        // All authenticated users (including members) can create tasks
+        return true;
     }
 
     /**
@@ -30,14 +38,18 @@ class TaskPolicy
      */
     public function update(User $user, Task $task): bool
     {
-        // Admin, creator, assignee, or project manager
-        if ($user->isAdmin() || $task->created_by === $user->id || $task->assigned_to === $user->id) {
+        // Admin can update any
+        if ($user->isAdmin()) {
             return true;
         }
-
-        $project = $task->project;
-        $member = $project->members()->where('user_id', $user->id)->first();
-        return $member && in_array($member->pivot->role, ['manager', 'owner']);
+        
+        // Project creator/manager can update
+        if ($task->created_by === $user->id || $task->project->created_by === $user->id) {
+            return true;
+        }
+        
+        // Member can update if assigned to them (status only)
+        return $task->assigned_to === $user->id;
     }
 
     /**
@@ -45,12 +57,9 @@ class TaskPolicy
      */
     public function delete(User $user, Task $task): bool
     {
-        // Admin, creator, or project owner
-        if ($user->isAdmin() || $task->created_by === $user->id) {
-            return true;
-        }
-
-        $project = $task->project;
-        return $project->created_by === $user->id;
+        // Only admin, project owner, or task creator can delete
+        return $user->isAdmin() || 
+               $task->project->created_by === $user->id ||
+               $task->created_by === $user->id;
     }
 }

@@ -147,15 +147,18 @@
             justify-content: center;
             padding: 2rem;
             background: var(--bg-dark);
+            overflow-y: auto;
+            min-height: 100vh;
         }
         
         .auth-card {
             background: var(--bg-card);
             border-radius: 20px;
-            padding: 3rem;
+            padding: 2.5rem;
             width: 100%;
             max-width: 450px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin: auto;
         }
         
         .auth-tabs {
@@ -208,7 +211,7 @@
         }
         
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
         
         .form-group label {
@@ -308,6 +311,25 @@
             
             .auth-form-container {
                 flex: 1;
+                padding: 1.5rem;
+            }
+            
+            .auth-card {
+                padding: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 1.5rem;
+            }
+            
+            .auth-logo h1 {
+                font-size: 1.5rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
             }
         }
     </style>
@@ -388,11 +410,11 @@
                 <form id="loginForm" class="auth-form">
                     <div class="form-group">
                         <label for="login-email">Email Address</label>
-                        <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required>
+                        <input type="email" id="loginEmail" class="form-input" required placeholder="Masukkan email (e.g. admin@example.com)">
                     </div>
                     <div class="form-group">
                         <label for="login-password">Password</label>
-                        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                        <input type="password" id="loginPassword" class="form-input" required placeholder="Masukkan password">
                     </div>
                     <button type="submit" class="btn-primary">
                         <i class="fas fa-sign-in-alt"></i> Sign In
@@ -406,19 +428,19 @@
                 <form id="registerForm" class="auth-form" style="display: none;">
                     <div class="form-group">
                         <label for="register-name">Full Name</label>
-                        <input type="text" id="register-name" class="form-input" placeholder="John Doe" required>
+                        <input type="text" id="registerName" class="form-input" required placeholder="Masukkan nama lengkap (e.g. John Doe)">
                     </div>
                     <div class="form-group">
                         <label for="register-email">Email Address</label>
-                        <input type="email" id="register-email" class="form-input" placeholder="you@example.com" required>
+                        <input type="email" id="registerEmail" class="form-input" required placeholder="Masukkan email (e.g. john@example.com)">
                     </div>
                     <div class="form-group">
                         <label for="register-password">Password</label>
-                        <input type="password" id="register-password" class="form-input" placeholder="••••••••" required>
+                        <input type="password" id="registerPassword" class="form-input" required placeholder="Masukkan password (min. 8 karakter)">
                     </div>
                     <div class="form-group">
                         <label for="register-password-confirm">Confirm Password</label>
-                        <input type="password" id="register-password-confirm" class="form-input" placeholder="••••••••" required>
+                        <input type="password" id="registerPasswordConfirmation" class="form-input" required placeholder="Ulangi password">
                     </div>
                     <button type="submit" class="btn-primary">
                         <i class="fas fa-user-plus"></i> Create Account

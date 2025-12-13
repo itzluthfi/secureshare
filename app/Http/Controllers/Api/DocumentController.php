@@ -10,6 +10,7 @@ use App\Services\FileEncryptionService;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
 {
@@ -25,7 +26,16 @@ class DocumentController extends Controller
     }
 
     /**
-     * Display a listing of documents in a project
+     * List project documents
+     * 
+     * @OA\Get(
+     *     path="/projects/{projectId}/documents",
+     *     tags={"Documents"},
+     *     summary="List project documents",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Documents list")
+     * )
      */
     public function index(Request $request, $projectId)
     {
@@ -54,19 +64,17 @@ class DocumentController extends Controller
 
         $file = $request->file('file');
         
-        // Encrypt and store file
+        // Encrypt and store file using AES-256
         $encryptionData = $this->encryption->encryptAndStore($file, "documents/{$projectId}");
 
         // Create document record
         $document = Document::create([
             'project_id' => $projectId,
             'name' => $request->name ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-            'original_name' => $file->getClientOriginalName(),
-            'file_path' => $encryptionData['file_path'],
-            'file_type' => $file->getClientMimeType(),
-            'file_size' => $file->getSize(),
-            'encryption_key' => $encryptionData['encryption_key'],
-            'encryption_iv' => $encryptionData['encryption_iv'],
+            'original_name' => $encryptionData['original_name'],
+            'file_path' => $encryptionData['encrypted_path'], // Encrypted path
+            'file_type' => $encryptionData['mime_type'],
+            'file_size' => $encryptionData['size'],
             'current_version' => 1,
             'uploaded_by' => $request->user()->id,
         ]);
@@ -75,16 +83,16 @@ class DocumentController extends Controller
         DocumentVersion::create([
             'document_id' => $document->id,
             'version_number' => 1,
-            'file_path' => $encryptionData['file_path'],
-            'file_size' => $file->getSize(),
-            'change_notes' => 'Initial version',
+            'file_path' => $encryptionData['encrypted_path'],
+            'file_size' => $encryptionData['size'],
+            'change_notes' => 'Initial version (encrypted with AES-256)',
             'uploaded_by' => $request->user()->id,
         ]);
 
         $this->auditLog->logDocumentUpload($document);
 
         return response()->json([
-            'message' => 'Document uploaded and encrypted successfully',
+            'message' => 'Document uploaded and encrypted successfully (AES-256)',
             'document' => $document->load('uploader'),
         ], 201);
     }
@@ -106,24 +114,16 @@ class DocumentController extends Controller
     public function download(Request $request, $id)
     {
         $document = Document::findOrFail($id);
-        $this->authorize('download', $document);
-
-        // Decrypt file
-        $decryptedContent = $this->encryption->decryptFile(
-            $document->file_path,
-            $document->encryption_key,
-            $document->encryption_iv
-        );
-
-        if ($decryptedContent === false) {
-            return response()->json(['message' => 'File not found or decryption failed'], 404);
-        }
+        
+        $this->authorize('view', $document->project);
 
         $this->auditLog->logDocumentDownload($document);
 
-        return response($decryptedContent)
-            ->header('Content-Type', $document->file_type)
-            ->header('Content-Disposition', 'attachment; filename="' . $document->original_name . '"');
+        // Decrypt and stream download
+        return $this->encryption->downloadDecrypted(
+            $document->file_path,
+            $document->original_name
+        );
     }
 
     /**
@@ -260,11 +260,11 @@ class DocumentController extends Controller
 
         // Delete all version files
         foreach ($document->versions as $version) {
-            $this->encryption->deleteFile($version->file_path);
+            $this->encryption->delete($version->file_path);
         }
 
         // Delete main file if different
-        $this->encryption->deleteFile($document->file_path);
+        $this->encryption->delete($document->file_path);
 
         $documentName = $document->name;
         

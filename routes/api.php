@@ -19,11 +19,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 });
 
-// Protected routes
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+// Protected routes with rate limiting
+Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(function () {
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::get('/auth/permissions', [AuthController::class, 'getPermissions']);
 
     // Users (Admin only)
     Route::middleware(['App\Http\Middleware\CheckRole:admin'])->group(function () {
@@ -68,6 +69,13 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/comments/{id}/reply', [CommentController::class, 'reply']);
     Route::put('/comments/{id}', [CommentController::class, 'update']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+
+    // Calendar & Milestones
+    Route::get('/calendar/events', [\App\Http\Controllers\Api\CalendarController::class, 'getEvents']);
+    Route::get('/calendar/month/{year}/{month}', [\App\Http\Controllers\Api\CalendarController::class, 'getMonthView']);
+    Route::post('/milestones', [\App\Http\Controllers\Api\CalendarController::class, 'storeMilestone']);
+    Route::put('/milestones/{id}', [\App\Http\Controllers\Api\CalendarController::class, 'updateMilestone']);
+    Route::delete('/milestones/{id}', [\App\Http\Controllers\Api\CalendarController::class, 'destroyMilestone']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);

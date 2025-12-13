@@ -22,7 +22,16 @@ class TaskController extends Controller
     }
 
     /**
-     * Display tasks for a project
+     * List project tasks
+     * 
+     * @OA\Get(
+     *     path="/projects/{projectId}/tasks",
+     *     tags={"Tasks"},
+     *     summary="List project tasks",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Tasks list")
+     * )
      */
     public function index(Request $request, $projectId)
     {
@@ -44,7 +53,28 @@ class TaskController extends Controller
     }
 
     /**
-     * Store a newly created task
+     * Create new task
+     * 
+     * @OA\Post(
+     *     path="/projects/{projectId}/tasks",
+     *     tags={"Tasks"},
+     *     summary="Create new task",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"title"},
+     *             @OA\Property(property="title", type="string"),
+     *             @OA\Property(property="description", type="string"),
+     *             @OA\Property(property="status", type="string", enum={"todo", "in_progress", "done"}),
+     *             @OA\Property(property="priority", type="string", enum={"low", "medium", "high"}),
+     *             @OA\Property(property="assigned_to", type="integer"),
+     *             @OA\Property(property="deadline", type="string", format="date")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Task created")
+     * )
      */
     public function store(Request $request, $projectId)
     {
@@ -90,7 +120,16 @@ class TaskController extends Controller
     }
 
     /**
-     * Display the specified task
+     * Get task details
+     * 
+     * @OA\Get(
+     *     path="/tasks/{id}",
+     *     tags={"Tasks"},
+     *     summary="Get task details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Task details")
+     * )
      */
     public function show(Request $request, $id)
     {
@@ -101,7 +140,24 @@ class TaskController extends Controller
     }
 
     /**
-     * Update the specified task
+     * Update task
+     * 
+     * @OA\Put(
+     *     path="/tasks/{id}",
+     *     tags={"Tasks"},
+     *     summary="Update task",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             @OA\Property(property="title", type="string"),
+     *             @OA\Property(property="description", type="string"),
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="priority", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Task updated")
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -158,7 +214,16 @@ class TaskController extends Controller
     }
 
     /**
-     * Remove the specified task
+     * Delete task
+     * 
+     * @OA\Delete(
+     *     path="/tasks/{id}",
+     *     tags={"Tasks"},
+     *     summary="Delete task",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Task deleted")
+     * )
      */
     public function destroy(Request $request, $id)
     {

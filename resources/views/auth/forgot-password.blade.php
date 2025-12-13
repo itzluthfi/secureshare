@@ -287,7 +287,7 @@
             <form id="forgotPasswordForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" required placeholder="you@example.com">
+                    <input type="email" id="email" required placeholder="Masukkan email (e.g. user@example.com)">
                 </div>
                 
                 <button type="submit" class="btn btn-primary" id="submitBtn">

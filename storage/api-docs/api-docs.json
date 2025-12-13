@@ -1,0 +1,816 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "SecureShare API",
+        "description": "Secure Document Collaboration Platform API with RESTful endpoints for project management, document sharing, and team collaboration.",
+        "contact": {
+            "email": "support@secureshare.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api/v1",
+            "description": "Development Server"
+        }
+    ],
+    "paths": {
+        "/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register new user",
+                "description": "Register a new user",
+                "operationId": "08136088c4862c313b35d6518bab8d3a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User login",
+                "description": "Authenticate user and return access token",
+                "operationId": "99d66635c4992aeaa6aa44ff653d0563",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abcd1234..."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Admin User"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "admin@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "description": "Logout user",
+                "operationId": "6abf3b64a4bc7838d56346f05a5153af",
+                "responses": {
+                    "200": {
+                        "description": "Logged out successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get current user",
+                "description": "Get authenticated user",
+                "operationId": "7edae2cdbaafc10dff8c9c4198b320a2",
+                "responses": {
+                    "200": {
+                        "description": "User data"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/permissions": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get user role and permissions",
+                "description": "Get authenticated user with role permissions",
+                "operationId": "25c321c7f4c2a811c3574dab143df320",
+                "responses": {
+                    "200": {
+                        "description": "User role and permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "type": "object"
+                                        },
+                                        "role": {
+                                            "type": "string"
+                                        },
+                                        "permissions": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Request password reset",
+                "description": "Forgot password",
+                "operationId": "fea89d2766defe4ad877001920e3f289",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "user@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reset link sent"
+                    }
+                }
+            }
+        },
+        "/calendar/events": {
+            "get": {
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Get all calendar events",
+                "description": "Get all calendar events",
+                "operationId": "2feed656ea16ddf2397c99dabf80cf1e",
+                "responses": {
+                    "200": {
+                        "description": "Events list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/calendar/month/{year}/{month}": {
+            "get": {
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Get monthly events",
+                "description": "Get events for specific month",
+                "operationId": "7c815e8f70a3d1915daef623a12c4512",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly events"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/milestones": {
+            "post": {
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Create milestone",
+                "description": "Create milestone",
+                "operationId": "e006ff7f24b3b25eb13095a4595134d3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "project_id",
+                                    "title",
+                                    "type",
+                                    "scheduled_date"
+                                ],
+                                "properties": {
+                                    "project_id": {
+                                        "type": "integer"
+                                    },
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "deadline",
+                                            "meeting",
+                                            "review",
+                                            "launch",
+                                            "milestone"
+                                        ]
+                                    },
+                                    "scheduled_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "scheduled_time": {
+                                        "type": "string",
+                                        "format": "time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Milestone created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/projects/{projectId}/documents": {
+            "get": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "List project documents",
+                "description": "List project documents",
+                "operationId": "71cfc9bae52bd270931e3c8a27731539",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documents list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/projects": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "List all projects",
+                "description": "Display a listing of projects",
+                "operationId": "e66a4b9c561c9e3e0b98d95b6437ff91",
+                "responses": {
+                    "200": {
+                        "description": "Projects list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Create new project",
+                "description": "Create new project",
+                "operationId": "3e5e24c249cabe95d4c10927fda15c42",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "My Project"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Project created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/projects/{id}": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get project details",
+                "description": "Get project details",
+                "operationId": "d5d2a5e8813ec56f48253ad43518b940",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Update project",
+                "description": "Update project",
+                "operationId": "cb0265885b60ef4107c9b46487995d73",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Project updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Delete project",
+                "description": "Delete project",
+                "operationId": "9eb2e4cfbf69515e53e54d18fc2a60d9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/projects/{projectId}/tasks": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "List project tasks",
+                "description": "List project tasks",
+                "operationId": "b4bbe25de3eb70a01cc7b2b81282ce6f",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tasks list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Create new task",
+                "description": "Create new task",
+                "operationId": "bcbdb050bb652ef8f207e22487c7f42d",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "todo",
+                                            "in_progress",
+                                            "done"
+                                        ]
+                                    },
+                                    "priority": {
+                                        "type": "string",
+                                        "enum": [
+                                            "low",
+                                            "medium",
+                                            "high"
+                                        ]
+                                    },
+                                    "assigned_to": {
+                                        "type": "integer"
+                                    },
+                                    "deadline": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Task created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/tasks/{id}": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get task details",
+                "description": "Get task details",
+                "operationId": "dd21301b6ef0425f2260a34eac9679c5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Update task",
+                "description": "Update task",
+                "operationId": "2a0a8c212f84263f9a249469557b2539",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "priority": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Task updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Delete task",
+                "description": "Delete task",
+                "operationId": "a2d3ec140e69f8b97ce812eadbe932ac",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Enter your bearer token in the format: Bearer {token}",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Calendar",
+            "description": "Calendar"
+        },
+        {
+            "name": "Documents",
+            "description": "Documents"
+        },
+        {
+            "name": "Projects",
+            "description": "Projects"
+        },
+        {
+            "name": "Tasks",
+            "description": "Tasks"
+        }
+    ]
+}

@@ -2,110 +2,94 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 
 class FileEncryptionService
 {
     /**
-     * Encrypt and save a file
-     *
+     * Encrypt and store file
+     * 
      * @param \Illuminate\Http\UploadedFile $file
-     * @param string $directory
-     * @return array [file_path, encryption_key, encryption_iv]
+     * @param string $path Directory path to store
+     * @return array ['encrypted_path' => string, 'original_name' => string]
      */
-    public function encryptAndStore($file, $directory = 'documents')
+    public function encryptAndStore($file, $path = 'documents')
     {
-        // Read file content
-        $fileContent = file_get_contents($file->getRealPath());
+        // Read file contents
+        $contents = file_get_contents($file->getRealPath());
         
-        // Generate encryption key and IV
-        $encryptionKey = random_bytes(32); // 256 bits
-        $iv = random_bytes(16); // 128 bits
-        
-        // Encrypt the file content
-        $encryptedContent = openssl_encrypt(
-            $fileContent,
-            'AES-256-CBC',
-            $encryptionKey,
-            OPENSSL_RAW_DATA,
-            $iv
-        );
+        // Encrypt using AES-256-CBC (Laravel default)
+        $encrypted = Crypt::encryptString($contents);
         
         // Generate unique filename
-        $filename = uniqid('doc_') . '_' . time() . '.enc';
-        $path = $directory . '/' . $filename;
+        $filename = time() . '_' . md5($file->getClientOriginalName()) . '.enc';
+        $fullPath = $path . '/' . $filename;
         
         // Store encrypted file
-        Storage::disk('local')->put($path, $encryptedContent);
+        Storage::put($fullPath, $encrypted);
         
-        // Return file path and encryption credentials (encoded for storage)
         return [
-            'file_path' => $path,
-            'encryption_key' => base64_encode($encryptionKey),
-            'encryption_iv' => base64_encode($iv),
+            'encrypted_path' => $fullPath,
+            'original_name' => $file->getClientOriginalName(),
+            'original_extension' => $file->getClientOriginalExtension(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
         ];
     }
-
+    
     /**
-     * Decrypt and return file content
-     *
-     * @param string $filePath
-     * @param string $encryptionKey (base64 encoded)
-     * @param string $iv (base64 encoded)
-     * @return string|false
+     * Decrypt and retrieve file
+     * 
+     * @param string $encryptedPath Path to encrypted file
+     * @return string Decrypted file contents
      */
-    public function decryptFile($filePath, $encryptionKey, $iv)
+    public function decryptFile($encryptedPath)
     {
-        // Get encrypted content
-        if (!Storage::disk('local')->exists($filePath)) {
-            return false;
-        }
+        // Get encrypted contents from storage
+        $encrypted = Storage::get($encryptedPath);
         
-        $encryptedContent = Storage::disk('local')->get($filePath);
+        // Decrypt using AES-256-CBC
+        $decrypted = Crypt::decryptString($encrypted);
         
-        // Decode encryption credentials
-        $key = base64_decode($encryptionKey);
-        $ivDecoded = base64_decode($iv);
-        
-        // Decrypt content
-        $decryptedContent = openssl_decrypt(
-            $encryptedContent,
-            'AES-256-CBC',
-            $key,
-            OPENSSL_RAW_DATA,
-            $ivDecoded
-        );
-        
-        return $decryptedContent;
+        return $decrypted;
     }
-
+    
+    /**
+     * Download decrypted file
+     * 
+     * @param string $encryptedPath
+     * @param string $originalName
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function downloadDecrypted($encryptedPath, $originalName)
+    {
+        $decrypted = $this->decryptFile($encryptedPath);
+        
+        return response()->streamDownload(function() use ($decrypted) {
+            echo $decrypted;
+        }, $originalName);
+    }
+    
     /**
      * Delete encrypted file
-     *
-     * @param string $filePath
+     * 
+     * @param string $encryptedPath
      * @return bool
      */
-    public function deleteFile($filePath)
+    public function delete($encryptedPath)
     {
-        if (Storage::disk('local')->exists($filePath)) {
-            return Storage::disk('local')->delete($filePath);
-        }
-        
-        return true;
+        return Storage::delete($encryptedPath);
     }
-
+    
     /**
-     * Get file size
-     *
-     * @param string $filePath
-     * @return int|false
+     * Check if file exists
+     * 
+     * @param string $encryptedPath
+     * @return bool
      */
-    public function getFileSize($filePath)
+    public function exists($encryptedPath)
     {
-        if (Storage::disk('local')->exists($filePath)) {
-            return Storage::disk('local')->size($filePath);
-        }
-        
-        return false;
+        return Storage::exists($encryptedPath);
     }
 }

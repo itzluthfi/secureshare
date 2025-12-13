@@ -24,6 +24,24 @@ class AuthController extends Controller
 
     /**
      * Register a new user
+     * 
+     * @OA\Post(
+     *     path="/auth/register",
+     *     tags={"Authentication"},
+     *     summary="Register new user",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="User registered successfully"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
      */
     public function register(Request $request)
     {
@@ -55,6 +73,37 @@ class AuthController extends Controller
 
     /**
      * Login user
+     */
+    /**
+     * User login
+     * 
+     * @OA\Post(
+     *     path="/auth/login",
+     *     tags={"Authentication"},
+     *     summary="User login",
+     *     description="Authenticate user and return access token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="token", type="string", example="1|abcd1234..."),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Admin User"),
+     *                 @OA\Property(property="email", type="string", example="admin@example.com")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid credentials")
+     * )
      */
     public function login(Request $request)
     {
@@ -123,6 +172,14 @@ class AuthController extends Controller
 
     /**
      * Logout user
+     * 
+     * @OA\Post(
+     *     path="/auth/logout",
+     *     tags={"Authentication"},
+     *     summary="Logout user",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Logged out successfully")
+     * )
      */
     public function logout(Request $request)
     {
@@ -138,7 +195,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Get current user
+     * Get authenticated user
+     * 
+     * @OA\Get(
+     *     path="/auth/me",
+     *     tags={"Authentication"},
+     *     summary="Get current user",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="User data")
+     * )
      */
     public function me(Request $request)
     {
@@ -146,7 +211,84 @@ class AuthController extends Controller
     }
 
     /**
+     * Get authenticated user with role permissions
+     * 
+     * @OA\Get(
+     *     path="/auth/permissions",
+     *     tags={"Authentication"},
+     *     summary="Get user role and permissions",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User role and permissions",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user", type="object"),
+     *             @OA\Property(property="role", type="string"),
+     *             @OA\Property(property="permissions", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function getPermissions(Request $request)
+    {
+        $user = $request->user();
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+            'role' => $user->role,
+            'permissions' => [
+                'projects' => [
+                    'create' => $user->isAdmin() || $user->isManager(),
+                    'view_all' => $user->isAdmin(),
+                    'manage_members' => $user->isAdmin() || $user->isManager(),
+                ],
+                'tasks' => [
+                    'create' => true,
+                    'update_any' => $user->isAdmin(),
+                    'update_assigned' => true,
+                    'delete' => $user->isAdmin() || $user->isManager(),
+                ],
+                'documents' => [
+                    'upload' => true,
+                    'download' => true,
+                    'delete' => $user->isAdmin() || $user->isManager(),
+                ],
+                'milestones' => [
+                    'create' => $user->isAdmin() || $user->isManager(),
+                    'update' => $user->isAdmin() || $user->isManager(),
+                    'delete' => $user->isAdmin() || $user->isManager(),
+                ],
+                'users' => [
+                    'view_all' => $user->isAdmin(),
+                    'create' => $user->isAdmin(),
+                    'update' => $user->isAdmin(),
+                    'delete' => $user->isAdmin(),
+                ],
+            ],
+        ]);
+    }
+    
+    /**
      * Forgot password
+     * 
+     * @OA\Post(
+     *     path="/auth/forgot-password",
+     *     tags={"Authentication"},
+     *     summary="Request password reset",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", example="user@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Reset link sent")
+     * )
      */
     public function forgotPassword(Request $request)
     {

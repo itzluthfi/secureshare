@@ -453,6 +453,10 @@
                 <i class="fas fa-folder"></i>
                 <span>Projects</span>
             </a>
+            <a href="{{ route('calendar') }}" class="menu-item {{ request()->routeIs('calendar') ? 'active' : '' }}">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Calendar</span>
+            </a>
             <a href="/tasks" class="menu-item">
                 <i class="fas fa-tasks"></i>
                 <span>My Tasks</span>
