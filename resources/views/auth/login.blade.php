@@ -74,7 +74,20 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
+            background: inherit;
+            opacity: 0.7;
+            z-index: 0;
+        }
+        
+        .carousel-slide::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1;
         }
         
         .carousel-content {
@@ -302,36 +315,60 @@
 <body>
     <div class="auth-container">
         <!-- Left Side - Image Carousel -->
-        <div class="auth-carousel">
-            <div class="carousel-slides">
-                <div class="carousel-slide active" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <div class="carousel-content">
-                        <i class="fas fa-shield-alt"></i>
-                        <h2>Secure Collaboration</h2>
-                        <p>End-to-end encrypted document sharing with military-grade AES-256 encryption</p>
-                    </div>
-                </div>
-                <div class="carousel-slide" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <div class="carousel-content">
-                        <i class="fas fa-users"></i>
-                        <h2>Team Productivity</h2>
-                        <p>Collaborate seamlessly with your team on projects and documents in real-time</p>
-                    </div>
-                </div>
-                <div class="carousel-slide" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                    <div class="carousel-content">
-                        <i class="fas fa-history"></i>
-                        <h2>Version Control</h2>
-                        <p>Track every change with complete version history and audit trails</p>
-                    </div>
-                </div>
-            </div>
-            <div class="carousel-dots">
-                <div class="carousel-dot active" data-slide="0"></div>
-                <div class="carousel-dot" data-slide="1"></div>
-                <div class="carousel-dot" data-slide="2"></div>
+<div class="auth-carousel">
+    <div class="carousel-slides">
+
+        <!-- Slide 1 -->
+        <div class="carousel-slide active"
+             style="
+                background-image:
+                linear-gradient(135deg, rgba(102,126,234,0.65), rgba(118,75,162,0.65)),
+                url('{{ asset('images/auth/bg-login1.jpg') }}');
+             ">
+            <div class="carousel-content">
+                <i class="fas fa-shield-alt"></i>
+                <h2>Secure Collaboration</h2>
+                <p>End-to-end encrypted document sharing with military-grade AES-256 encryption</p>
             </div>
         </div>
+
+        <!-- Slide 2 -->
+        <div class="carousel-slide"
+             style="
+                background-image:
+                linear-gradient(135deg, rgba(240,147,251,0.65), rgba(245,87,108,0.65)),
+                url('{{ asset('images/auth/bg-login2.webp') }}');
+             ">
+            <div class="carousel-content">
+                <i class="fas fa-users"></i>
+                <h2>Team Productivity</h2>
+                <p>Collaborate seamlessly with your team on projects and documents in real-time</p>
+            </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="carousel-slide"
+             style="
+                background-image:
+                linear-gradient(135deg, rgba(79,172,254,0.65), rgba(0,242,254,0.65)),
+                url('{{ asset('images/auth/bg-login3.jpg') }}');
+             ">
+            <div class="carousel-content">
+                <i class="fas fa-history"></i>
+                <h2>Version Control</h2>
+                <p>Track every change with complete version history and audit trails</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="carousel-dots">
+        <div class="carousel-dot active" data-slide="0"></div>
+        <div class="carousel-dot" data-slide="1"></div>
+        <div class="carousel-dot" data-slide="2"></div>
+    </div>
+</div>
+
         
         <!-- Right Side - Auth Form -->
         <div class="auth-form-container">
