@@ -138,8 +138,9 @@ $project->members()->attach($request->user()->id, [
      *     @OA\Response(response=200, description="Project updated")
      * )
      */
-    public function update(Request $request, Project $project)
+    public function update(Request $request, $id)
     {
+        $project = Project::findOrFail($id);
         $this->authorize('update', $project);
 
         $oldValues = $project->toArray();
@@ -172,8 +173,9 @@ $project->members()->attach($request->user()->id, [
      *     @OA\Response(response=200, description="Project deleted")
      * )
      */
-    public function destroy(Request $request, Project $project)
+    public function destroy(Request $request, $id)
     {
+        $project = Project::findOrFail($id);
         $this->authorize('delete', $project);
 
         $projectName = $project->name;
@@ -390,5 +392,56 @@ $project->members()->attach($request->user()->id, [
         );
         
         return response()->json(['message' => 'Invitation declined']);
+    }
+    /**
+     * Get project activities
+     */
+    public function getActivities($projectId)
+    {
+        $project = Project::findOrFail($projectId);
+        $this->authorize('view', $project); // Any member can view activity
+        
+        // Fetch audit logs related to this project
+        // Including direct project logs and related item logs (tasks, members, documents)
+        $activities = \App\Models\AuditLog::where(function($query) use ($projectId) {
+                // Direct project activities
+                $query->where('model_type', 'App\\Models\\Project')
+                      ->where('model_id', $projectId);
+            })
+            ->orWhere(function($query) use ($projectId) {
+               // Include logs for tasks related to this project
+                $query->where('model_type', 'App\\Models\\Task')
+                      ->whereIn('model_id', function($q) use ($projectId) {
+                          $q->select('id')->from('tasks')->where('project_id', $projectId);
+                      });
+            })
+             ->orWhere(function($query) use ($projectId) {
+                // Include logs for documents related to this project (if document has project_id)
+                $query->where('model_type', 'App\\Models\\Document')
+                      ->whereIn('model_id', function($q) use ($projectId) {
+                          $q->select('id')->from('documents')->where('project_id', $projectId);
+                      });
+            })
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+            
+            // Transform for frontend
+            $transformed = $activities->map(function($log) {
+                return [
+                    'id' => $log->id,
+                    'action' => $log->action, // 'created', 'updated', 'member_added', etc.
+                    'event' => $log->action,  // Alias for compatibility
+                    'description' => $log->description, // The readable message (was details, but model says description)
+                    'user' => $log->user,
+                    'created_at' => $log->created_at,
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $transformed
+        ]);
     }
 }

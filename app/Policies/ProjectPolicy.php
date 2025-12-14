@@ -38,11 +38,12 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        // Admin or project creator or project manager
-        if ($user->isAdmin() || $project->created_by === $user->id) {
+        // Admin or global Manager or project creator
+        if ($user->isAdmin() || $user->isManager() || $project->created_by === $user->id) {
             return true;
         }
 
+        // Project manager (via pivot)
         $member = $project->members()->where('user_id', $user->id)->first();
         return $member && $member->pivot->role === 'manager';
     }

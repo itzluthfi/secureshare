@@ -150,7 +150,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task created successfully',
-            'task' => $task->load(['assignee', 'creator']),
+            'task' => $task->load(['assignees', 'creator']),
         ], 201);
     }
 
@@ -168,7 +168,7 @@ class TaskController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $task = Task::with(['assignee', 'creator', 'project'])->findOrFail($id);
+        $task = Task::with(['assignees', 'creator', 'project'])->findOrFail($id);
         $this->authorize('view', $task);
 
         return response()->json($task);
@@ -216,7 +216,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task updated successfully',
-            'task' => $task->load(['assignee', 'creator']),
+            'task' => $task->load(['assignees', 'creator']),
         ]);
     }
 

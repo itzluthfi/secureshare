@@ -173,6 +173,14 @@
                         <label>Description</label>
                         <textarea id="task-description" class="form-input" rows="3"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="task-status" class="form-input">
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>Assign To</label>
@@ -571,7 +579,7 @@
     const projectId = window.location.pathname.split('/').pop();
     
     // Bind action buttons
-    $('#editProjectBtn').click(function() { editProject(); });
+    $('#editProjectBtn').click(function() { openEditProjectModal(); });
     $('#inviteMemberBtn').click(function() { openInviteMemberModal(); });
     $('#uploadDocumentBtn').click(function() { openUploadModal(); });
     
@@ -608,6 +616,30 @@
             $('#inviteMemberForm').submit(function (e) {
                 e.preventDefault();
                 inviteMember();
+            });
+
+            // Edit Project form
+            $('#editProjectForm').submit(function (e) {
+                e.preventDefault();
+                
+                const data = {
+                    name: $('#edit-project-name').val(),
+                    description: $('#edit-project-description').val()
+                };
+
+                $.ajax({
+                    url: `/api/v1/projects/${projectId}`,
+                    method: 'PUT',
+                    data: data,
+                    success: function (response) {
+                        showToast('Project updated successfully', 'success');
+                        closeEditProjectModal();
+                        loadProjectDetails();
+                    },
+                    error: function (xhr) {
+                        showToast(xhr.responseJSON?.message || 'Failed to update project', 'error');
+                    }
+                });
             });
         });
 
@@ -1014,6 +1046,7 @@
             const data = {
                 title: $('#task-title').val(),
                 description: $('#task-description').val(),
+                status: $('#task-status').val(),
                 priority: $('#task-priority').val(),
                 assignees: $('#task-assignee').val() || [],
                 deadline: $('#task-deadline').val() || null
@@ -1041,9 +1074,21 @@
                     $('#task-id').val(task.id);
                     $('#task-title').val(task.title);
                     $('#task-description').val(task.description);
-                    $('#task-assignee').val(task.assigned_to);
+                    $('#task-status').val(task.status);
+                    $('#task-assignee').val(task.assignees ? task.assignees.map(a => a.id) : []);
                     $('#task-priority').val(task.priority);
-                    $('#task-deadline').val(task.deadline);
+                    $('#task-deadline').val(task.deadline ? task.deadline.split('T')[0] : '');
+                    
+                    // Initialize Select2
+                    if (!$('#task-assignee').data('select2')) {
+                        $('#task-assignee').select2({
+                            placeholder: 'Select assignees',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
+                    $('#task-assignee').trigger('change');
+                    
                     $('#taskModal').addClass('show');
                 });
         }
@@ -1065,6 +1110,57 @@
                 });
         }
 
+        function loadActivity() {
+            $.get(`/api/v1/projects/${projectId}/activities`)
+                .done(function(response) {
+                    const activities = response.data || response;
+                    
+                    if (!activities || activities.length === 0) {
+                        $('#activity-list').html('<p style="text-align: center; padding: 2rem; color: var(--text-muted);">No recent activity</p>');
+                        return;
+                    }
+                    
+                    let html = '';
+                    activities.forEach(activity => {
+                        const date = new Date(activity.created_at).toLocaleString();
+                        let icon = '<i class="fas fa-circle" style="color: var(--text-muted);"></i>';
+                        let color = 'var(--text-muted)';
+                        
+                        // Determine icon based on action
+                        const action = (activity.action || '').toLowerCase();
+                        const desc = (activity.description || '').toLowerCase();
+                        
+                        if (action.includes('create')) { icon = '<i class="fas fa-plus-circle"></i>'; color = 'var(--success)'; }
+                        else if (action.includes('update')) { icon = '<i class="fas fa-pen"></i>'; color = 'var(--warning)'; }
+                        else if (action.includes('delete')) { icon = '<i class="fas fa-trash"></i>'; color = 'var(--danger)'; }
+                        else if (action.includes('invite') || action.includes('member') || action.includes('accepted')) { icon = '<i class="fas fa-user-plus"></i>'; color = 'var(--primary-blue)'; }
+                        else if (action.includes('upload')) { icon = '<i class="fas fa-file-upload"></i>'; color = 'var(--purple)'; }
+                        else if (action.includes('task')) { icon = '<i class="fas fa-tasks"></i>'; color = 'var(--info)'; }
+                        
+                        // Override icon if description contains specific keywords
+                        if (desc.includes('task')) { icon = '<i class="fas fa-tasks"></i>'; }
+                        if (desc.includes('document') || desc.includes('file')) { icon = '<i class="fas fa-file"></i>'; }
+                        
+                        html += `
+                        <div style="display: flex; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="color: ${color}; font-size: 1.2rem; margin-top: 0.2rem;">${icon}</div>
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">${activity.description}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                    By ${activity.user ? activity.user.name : 'System'} • ${date}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    });
+                    
+                    $('#activity-list').html(html);
+                })
+                .fail(function() {
+                    $('#activity-list').html('<p style="text-align: center; padding: 2rem; color: var(--danger);">Failed to load activity log</p>');
+                });
+        }
+
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
@@ -1074,11 +1170,6 @@
         function viewVersions(docId) {
             // Placeholder
             showToast('Version history coming soon', 'info');
-        }
-
-        function editProject() {
-            // Placeholder
-            showToast('Edit project coming soon', 'info');
         }
     </script>
 @endpush

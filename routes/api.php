@@ -50,6 +50,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(funct
     Route::post('/projects/{project}/invitations/decline', [ProjectController::class, 'declineInvitation'])->name('api.projects.declineInvitation');
     Route::delete('/projects/{project}/members/{userId}', [ProjectController::class, 'removeMember'])->name('api.projects.removeMember');
     Route::put('/projects/{project}/members/{userId}', [ProjectController::class, 'updateMemberRole'])->name('api.projects.updateMemberRole');
+    Route::get('/projects/{project}/activities', [ProjectController::class, 'getActivities'])->name('api.projects.activities');
 
     // Documents
     Route::get('/projects/{projectId}/documents', [DocumentController::class, 'index']);
