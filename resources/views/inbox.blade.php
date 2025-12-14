@@ -279,11 +279,14 @@ function formatTime(dateString) {
 
 function handleNotificationClick(notifId, type, data) {
     // Mark as read
-    $.post(`/api/v1/notifications/${notifId}/mark-read`)
-        .done(function() {
+    $.ajax({
+        url: `/api/v1/notifications/${notifId}/read`,
+        method: 'PUT',
+        success: function() {
             // Update notification count in sidebar
             loadNotificationCount();
-        });
+        }
+    });
     
     // Navigate based on type
     if (type.includes('task') && data.task_id) {
@@ -301,15 +304,18 @@ function handleNotificationClick(notifId, type, data) {
 }
 
 function markAllAsRead() {
-    $.post('/api/v1/notifications/mark-all-read')
-        .done(function() {
+    $.ajax({
+        url: '/api/v1/notifications/read-all',
+        method: 'PUT',
+        success: function() {
             showToast('All notifications marked as read', 'success');
             loadNotifications();
             loadNotificationCount();
-        })
-        .fail(function() {
+        },
+        error: function() {
             showToast('Failed to mark notifications as read', 'error');
-        });
+        }
+    });
 }
 
 function acceptInvitation(notifId, projectId) {
@@ -317,7 +323,7 @@ function acceptInvitation(notifId, projectId) {
         .done(function(response) {
             showToast('Invitation accepted! Welcome to the project!', 'success');
             // Mark notification as read
-            $.post(`/api/v1/notifications/${notifId}/mark-read`);
+            $.ajax({ url: `/api/v1/notifications/${notifId}/read`, method: 'PUT' });
             // Reload notifications
             loadNotifications();
             loadNotificationCount();
@@ -336,9 +342,9 @@ function declineInvitation(notifId, projectId) {
     
     $.post(`/api/v1/projects/${projectId}/invitations/decline`)
         .done(function(response) {
-            showToast('Invitation dec lined', 'info');
+            showToast('Invitation declined', 'info');
             // Mark notification as read
-            $.post(`/api/v1/notifications/${notifId}/mark-read`);
+            $.ajax({ url: `/api/v1/notifications/${notifId}/read`, method: 'PUT' });
             // Reload notifications
             loadNotifications();
             loadNotificationCount();
@@ -368,8 +374,10 @@ function markSelectedAsRead() {
     
     let completed = 0;
     selected.forEach(id => {
-        $.post(`/api/v1/notifications/${id}/mark-read`)
-            .done(() => {
+        $.ajax({
+            url: `/api/v1/notifications/${id}/read`,
+            method: 'PUT',
+            success: () => {
                 completed++;
                 if (completed === selected.length) {
                     showToast(`${selected.length} notification(s) marked as read`, 'success');
@@ -377,10 +385,11 @@ function markSelectedAsRead() {
                     loadNotificationCount();
                     $('#markSelectedBtn').hide();
                 }
-            })
-            .fail(() => {
+            },
+            error: () => {
                 showToast('Failed to mark notification', 'error');
-            });
+            }
+        });
     });
 }
 </script>

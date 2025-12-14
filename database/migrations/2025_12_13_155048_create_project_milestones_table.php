@@ -18,6 +18,7 @@ return new class extends Migration
             $table->time('scheduled_time')->nullable();
             $table->boolean('is_completed')->default(false);
             $table->foreignId('created_by')->constrained('users');
+            $table->date('start_date')->nullable();
             $table->timestamps();
         });
     }

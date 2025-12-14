@@ -14,14 +14,6 @@ class CalendarController extends Controller
 {
     /**
      * Get all calendar events
-     * 
-     * @OA\Get(
-     *     path="/calendar/events",
-     *     tags={"Calendar"},
-     *     summary="Get all calendar events",
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(response=200, description="Events list")
-     * )
      */
     public function getEvents(Request $request)
     {
@@ -39,68 +31,60 @@ class CalendarController extends Controller
         
         $events = [];
         
-        // 1. Milestones
+        // 1. Milestones - spread across date range
         $milestones = Milestone::whereIn('project_id', $projectIds)
             ->with(['project', 'creator'])
             ->get();
             
         foreach ($milestones as $milestone) {
-            $events[] = [
-                'id' => 'milestone-' . $milestone->id,
-                'title' => $milestone->title,
-                'description' => $milestone->description,
-                'type' => $milestone->type,
-                'date' => $milestone->scheduled_date->format('Y-m-d'),
-                'time' => $milestone->scheduled_time,
-                'project' => $milestone->project->name,
-                'project_id' => $milestone->project_id,
-                'is_completed' => $milestone->is_completed,
-                'category' => 'milestone',
-                'color' => $this->getEventColor($milestone->type),
-            ];
+            $dates = $milestone->getDateRange();
+            
+            foreach ($dates as $date) {
+                $events[] = [
+                    'id' => 'milestone-' . $milestone->id,
+                    'title' => $milestone->title,
+                    'description' => $milestone->description,
+                    'type' => $milestone->type,
+                    'date' => $date,
+                    'time' => $milestone->scheduled_time,
+                    'project' => $milestone->project->name,
+                    'project_id' => $milestone->project_id,
+                    'is_completed' => $milestone->is_completed,
+                    'category' => 'milestone',
+                    'color' => $this->getEventColor($milestone->type),
+                    'start_date' => $milestone->start_date ? $milestone->start_date->format('Y-m-d') : null,
+                    'end_date' => $milestone->scheduled_date->format('Y-m-d'),
+                ];
+            }
         }
         
-        // 2. Tasks with deadlines
+        // 2. Tasks - spread across date range
         $tasks = Task::whereIn('project_id', $projectIds)
             ->whereNotNull('deadline')
-            ->with(['project', 'assignee'])
+            ->with(['project', 'assignees'])
             ->get();
             
         foreach ($tasks as $task) {
-            $events[] = [
-                'id' => 'task-' . $task->id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'type' => 'task',
-                'date' => $task->deadline,
-                'time' => null,
-                'project' => $task->project->name,
-                'project_id' => $task->project_id,
-                'is_completed' => $task->status === 'done',
-                'category' => 'task',
-                'color' => $task->status === 'done' ? '#10B981' : '#F59E0B',
-                'assignee' => $task->assignee ? $task->assignee->name : null,
-            ];
-        }
-        
-        // 3. Projects (created date as reference)
-        $projects = Project::whereIn('id', $projectIds)
-            ->with('creator')
-            ->get();
+            $dates = $task->getDateRange();
             
-        foreach ($projects as $project) {
-            $events[] = [
-                'id' => 'project-' . $project->id,
-                'title' => $project->name . ' (Created)',
-                'description' => $project->description,
-                'type' => 'project',
-                'date' => $project->created_at->format('Y-m-d'),
-                'time' => null,
-                'project' => $project->name,
-                'project_id' => $project->id,
-                'category' => 'project',
-                'color' => '#4F7FFF',
-            ];
+            foreach ($dates as $date) {
+                $events[] = [
+                    'id' => 'task-' . $task->id,
+                    'title' => $task->title,
+                    'description' => $task->description,
+                    'type' => 'task',
+                    'date' => $date,
+                    'time' => null,
+                    'project' => $task->project->name,
+                    'project_id' => $task->project_id,
+                    'is_completed' => $task->status === 'done',
+                    'category' => 'task',
+                    'color' => $task->status === 'done' ? '#10B981' : '#F59E0B',
+                    'assignees' => $task->assignees->pluck('name')->join(', '),
+                    'start_date' => $task->start_date ? $task->start_date->format('Y-m-d') : null,
+                    'end_date' => $task->deadline->format('Y-m-d'),
+                ];
+            }
         }
         
         return response()->json($events);
@@ -108,16 +92,6 @@ class CalendarController extends Controller
     
     /**
      * Get events for specific month
-     * 
-     * @OA\Get(
-     *     path="/calendar/month/{year}/{month}",
-     *     tags={"Calendar"},
-     *     summary="Get monthly events",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="year", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="month", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Monthly events")
-     * )
      */
     public function getMonthView(Request $request, $year, $month)
     {
@@ -139,75 +113,122 @@ class CalendarController extends Controller
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
         
-        $events = [];
+        $groupedEvents = [];
         
-        // Milestones in this month
+        // Milestones - show in all days between start_date and scheduled_date
         $milestones = Milestone::whereIn('project_id', $projectIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->where(function($query) use ($startDate, $endDate) {
+                // Event overlaps with month if:
+                // - start_date is null and scheduled_date is in range
+                // - OR event's date range overlaps with month
+                $query->where(function($q) use ($startDate, $endDate) {
+                    $q->whereNull('start_date')
+                      ->whereBetween('scheduled_date', [$startDate, $endDate]);
+                })
+                ->orWhere(function($q) use ($startDate, $endDate) {
+                    $q->whereNotNull('start_date')
+                      ->where(function($q2) use ($startDate, $endDate) {
+                          // Start date is before month end AND end date is after month start
+                          $q2->where('start_date', '<=', $endDate)
+                             ->where('scheduled_date', '>=', $startDate);
+                      });
+                });
+            })
             ->with(['project'])
             ->get();
             
         foreach ($milestones as $milestone) {
-            $events[] = [
-                'date' => $milestone->scheduled_date->format('Y-m-d'),
-                'title' => $milestone->title,
-                'type' => $milestone->type,
-                'project' => $milestone->project->name,
-                'category' => 'milestone',
-                'color' => $this->getEventColor($milestone->type),
-            ];
+            $dates = $milestone->getDateRange();
+            
+            foreach ($dates as $date) {
+                // Only include dates within the current month
+                $dateObj = Carbon::parse($date);
+                if ($dateObj->between($startDate, $endDate)) {
+                    if (!isset($groupedEvents[$date])) {
+                        $groupedEvents[$date] = [];
+                    }
+                    
+                    $groupedEvents[$date][] = [
+                        'id' => 'milestone-' . $milestone->id,
+                        'title' => $milestone->title,
+                        'type' => $milestone->type,
+                        'project' => $milestone->project->name,
+                        'category' => 'milestone',
+                        'color' => $this->getEventColor($milestone->type),
+                        'is_completed' => $milestone->is_completed,
+                        'start_date' => $milestone->start_date ? $milestone->start_date->format('Y-m-d') : null,
+                        'end_date' => $milestone->scheduled_date->format('Y-m-d'),
+                    ];
+                }
+            }
         }
         
-        // Tasks due in this month
+        // Tasks - show in all days between start_date and deadline
         $tasks = Task::whereIn('project_id', $projectIds)
-            ->whereBetween('deadline', [$startDate, $endDate])
-            ->with(['project'])
+            ->whereNotNull('deadline')
+            ->where(function($query) use ($startDate, $endDate) {
+                // Task overlaps with month if:
+                // - start_date is null and deadline is in range
+                // - OR task's date range overlaps with month
+                $query->where(function($q) use ($startDate, $endDate) {
+                    $q->whereNull('start_date')
+                      ->whereBetween('deadline', [$startDate, $endDate]);
+                })
+                ->orWhere(function($q) use ($startDate, $endDate) {
+                    $q->whereNotNull('start_date')
+                      ->where(function($q2) use ($startDate, $endDate) {
+                          // Start date is before month end AND deadline is after month start
+                          $q2->where('start_date', '<=', $endDate)
+                             ->where('deadline', '>=', $startDate);
+                      });
+                });
+            })
+            ->with(['project', 'assignees'])
             ->get();
             
         foreach ($tasks as $task) {
-            $events[] = [
-                'date' => $task->deadline,
-                'title' => $task->title,
-                'type' => 'task',
-                'project' => $task->project->name,
-                'category' => 'task',
-                'color' => $task->status === 'done' ? '#10B981' : '#F59E0B',
-            ];
+            $dates = $task->getDateRange();
+            
+            foreach ($dates as $date) {
+                // Only include dates within the current month
+                $dateObj = Carbon::parse($date);
+                if ($dateObj->between($startDate, $endDate)) {
+                    if (!isset($groupedEvents[$date])) {
+                        $groupedEvents[$date] = [];
+                    }
+                    
+                    $groupedEvents[$date][] = [
+                        'id' => 'task-' . $task->id,
+                        'title' => $task->title,
+                        'type' => 'task',
+                        'project' => $task->project->name,
+                        'category' => 'task',
+                        'color' => $task->status === 'done' ? '#10B981' : '#F59E0B',
+                        'is_completed' => $task->status === 'done',
+                        'assignees' => $task->assignees->pluck('name')->join(', '),
+                        'start_date' => $task->start_date ? $task->start_date->format('Y-m-d') : null,
+                        'end_date' => $task->deadline->format('Y-m-d'),
+                    ];
+                }
+            }
         }
         
-        // Group events by date
-        $groupedEvents = collect($events)->groupBy('date')->toArray();
+        // Count total events
+        $totalEvents = 0;
+        foreach ($groupedEvents as $events) {
+            $totalEvents += count($events);
+        }
         
         return response()->json([
             'month' => $month,
             'year' => $year,
             'events' => $groupedEvents,
-            'total_events' => count($events),
+            'total_events' => $totalEvents,
         ]);
     }
     
     /**
      * Create milestone
-     * 
-     * @OA\Post(
-     *     path="/milestones",
-     *     tags={"Calendar"},
-     *     summary="Create milestone",
-     *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"project_id", "title", "type", "scheduled_date"},
-     *             @OA\Property(property="project_id", type="integer"),
-     *             @OA\Property(property="title", type="string"),
-     *             @OA\Property(property="description", type="string"),
-     *             @OA\Property(property="type", type="string", enum={"deadline", "meeting", "review", "launch", "milestone"}),
-     *             @OA\Property(property="scheduled_date", type="string", format="date"),
-     *             @OA\Property(property="scheduled_time", type="string", format="time")
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Milestone created")
-     * )
      */
     public function storeMilestone(Request $request)
     {
@@ -216,7 +237,8 @@ class CalendarController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:deadline,meeting,review,launch,milestone',
-            'scheduled_date' => 'required|date',
+            'start_date' => 'nullable|date',
+            'scheduled_date' => 'required|date|after_or_equal:start_date',
             'scheduled_time' => 'nullable|date_format:H:i',
         ]);
         
@@ -242,7 +264,8 @@ class CalendarController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'type' => 'sometimes|in:deadline,meeting,review,launch,milestone',
-            'scheduled_date' => 'sometimes|date',
+            'start_date' => 'nullable|date',
+            'scheduled_date' => 'sometimes|date|after_or_equal:start_date',
             'scheduled_time' => 'nullable|date_format:H:i',
             'is_completed' => 'sometimes|boolean',
         ]);
@@ -277,6 +300,7 @@ class CalendarController extends Controller
             'review' => '#F59E0B',
             'launch' => '#10B981',
             'milestone' => '#4F7FFF',
+            'task' => '#F59E0B',
             default => '#6B7280',
         };
     }

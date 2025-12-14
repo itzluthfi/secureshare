@@ -451,48 +451,55 @@
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        // Check if already logged in - redirect to dashboard
+        // ===============================
+        // AUTO REDIRECT JIKA SUDAH LOGIN
+        // ===============================
         const existingToken = localStorage.getItem('token');
         if (existingToken) {
             console.log('Already logged in, redirecting to dashboard...');
             window.location.href = '/dashboard';
         }
-        
-        // Carousel
+
+        // ===============================
+        // CAROUSEL
+        // ===============================
         let currentSlide = 0;
         const slides = document.querySelectorAll('.carousel-slide');
         const dots = document.querySelectorAll('.carousel-dot');
-        
+
         function showSlide(index) {
             slides.forEach(slide => slide.classList.remove('active'));
             dots.forEach(dot => dot.classList.remove('active'));
             slides[index].classList.add('active');
             dots[index].classList.add('active');
         }
-        
+
         function nextSlide() {
             currentSlide = (currentSlide + 1) % slides.length;
             showSlide(currentSlide);
         }
-        
-        // Auto rotate every 5 seconds
+
         setInterval(nextSlide, 5000);
-        
-        // Dot click
+
         dots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
                 currentSlide = index;
                 showSlide(currentSlide);
             });
         });
-        
-        // Tab switching
-        $('.auth-tab').click(function() {
+
+        // ===============================
+        // TAB LOGIN / REGISTER
+        // ===============================
+        $('.auth-tab').click(function () {
             const tab = $(this).data('tab');
             $('.auth-tab').removeClass('active');
             $(this).addClass('active');
-            
+
             if (tab === 'login') {
                 $('#loginForm').show();
                 $('#registerForm').hide();
@@ -501,25 +508,22 @@
                 $('#registerForm').show();
             }
         });
-        
-        // Toast notification
-        function showToast(message, type = 'success') {
-            // Simple toast implementation
-            alert(message);
-        }
-        
-        // Login form
-        $('#loginForm').submit(function(e) {
+
+        // ===============================
+        // LOGIN FORM
+        // ===============================
+        $('#loginForm').submit(function (e) {
             e.preventDefault();
-            
+
             const email = $('#loginEmail').val();
             const password = $('#loginPassword').val();
             const submitBtn = $(this).find('button[type="submit"]');
             const originalBtnText = submitBtn.html();
-            
-            // Set loading state
-            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Signing in...');
-            
+
+            submitBtn
+                .prop('disabled', true)
+                .html('<i class="fas fa-spinner fa-spin"></i> Signing in...');
+
             $.ajax({
                 url: '/login',
                 method: 'POST',
@@ -529,53 +533,73 @@
                     'Accept': 'application/json'
                 }
             })
-            .done(function(response) {
+            .done(function (response) {
                 if (response.token) {
-                    // Store token and user
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('user', JSON.stringify(response.user));
-                    
-                    // Show success message
-                    showToast('Login successful! Redirecting...', 'success');
-                    
-                    // Update button to show success
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Login berhasil',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+
                     submitBtn.html('<i class="fas fa-check"></i> Success!');
-                    
-                    // Redirect after short delay
+
                     setTimeout(() => {
                         window.location.href = response.redirect || '/dashboard';
                     }, 800);
                 }
             })
-            .fail(function(xhr) {
-                // Reset button
+            .fail(function (xhr) {
                 submitBtn.prop('disabled', false).html(originalBtnText);
-                
-                // Show error message
-                const message = xhr.responseJSON?.message || 'Login failed. Please check your credentials.';
-                showToast(message, 'error');
+
+                const message = xhr.responseJSON?.message
+                    || 'Login failed. Please check your credentials.';
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 3000
+                });
             });
         });
-        
-        // Register form
-        $('#registerForm').submit(function(e) {
+
+        // ===============================
+        // REGISTER FORM
+        // ===============================
+        $('#registerForm').submit(function (e) {
             e.preventDefault();
-            
+
             const name = $('#registerName').val();
             const email = $('#registerEmail').val();
             const password = $('#registerPassword').val();
             const password_confirmation = $('#registerPasswordConfirmation').val();
             const submitBtn = $(this).find('button[type="submit"]');
             const originalBtnText = submitBtn.html();
-            
+
             if (password !== password_confirmation) {
-                showToast('Passwords do not match!', 'error');
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Password tidak sama',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
                 return;
             }
-            
-            // Set loading state
-            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating account...');
-            
+
+            submitBtn
+                .prop('disabled', true)
+                .html('<i class="fas fa-spinner fa-spin"></i> Creating account...');
+
             $.ajax({
                 url: '/register',
                 method: 'POST',
@@ -585,34 +609,57 @@
                     'Accept': 'application/json'
                 }
             })
-            .done(function(response) {
+            .done(function (response) {
                 if (response.token) {
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('user', JSON.stringify(response.user));
-                    
-                    showToast('Registration successful! Redirecting...', 'success');
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Registrasi berhasil! Mengalihkan...',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+
                     submitBtn.html('<i class="fas fa-check"></i> Success!');
-                    
+
                     setTimeout(() => {
                         window.location.href = response.redirect || '/dashboard';
                     }, 800);
                 }
             })
-            .fail(function(xhr) {
-                // Reset button
+            .fail(function (xhr) {
                 submitBtn.prop('disabled', false).html(originalBtnText);
-                
-                // Handle validation errors
+
                 const errors = xhr.responseJSON?.errors;
+
                 if (errors) {
-                    const errorMsgArray = Object.values(errors).flat();
-                    showToast(errorMsgArray.join('<br>'), 'error');
+                    const errorMsg = Object.values(errors).flat().join('<br>');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validasi Gagal',
+                        html: errorMsg,
+                        confirmButtonColor: '#4F7FFF'
+                    });
                 } else {
-                    const message = xhr.responseJSON?.message || 'Registration failed. Please try again.';
-                    showToast(message, 'error');
+                    const message = xhr.responseJSON?.message
+                        || 'Registration failed. Please try again.';
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: message,
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
                 }
             });
         });
     </script>
+
 </body>
 </html>

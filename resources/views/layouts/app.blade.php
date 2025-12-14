@@ -476,12 +476,12 @@
                 <i class="fas fa-users"></i>
                 <span>Team</span>
             </a>
-            @can('viewAny', App\Models\User::class)
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('admin.users') }}" class="menu-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
                 <i class="fas fa-user-shield"></i>
                 <span>Admin</span>
             </a>
-            @endcan
+            @endif
         </nav>
         
         <div class="sidebar-footer">

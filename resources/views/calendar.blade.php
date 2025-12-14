@@ -88,13 +88,17 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="milestone-date" required class="form-input">
+                        <label>Start Date</label>
+                        <input type="date" id="milestone-start-date" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label>Time (Optional)</label>
-                        <input type="time" id="milestone-time" class="form-input">
+                        <label>End Date</label>
+                        <input type="date" id="milestone-date" required class="form-input">
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Time (Optional)</label>
+                    <input type="time" id="milestone-time" class="form-input">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
                     <i class="fas fa-save"></i> Create Event
@@ -199,99 +203,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
+    position: relative;
 }
 
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+.event-item.event-span {
+    border-left: 3px solid;
+    padding-left: 0.5rem;
 }
 
-.modal.show {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: var(--bg-card);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.modal-header h3 {
-    margin: 0;
-}
-
-.modal-close {
-    font-size: 2rem;
-    cursor: pointer;
-    color: var(--text-muted);
-}
-
-.modal-close:hover {
-    color: var(--text-primary);
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.event-detail {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: var(--bg-dark);
-    border-radius: 8px;
-    border-left: 4px solid;
-}
-
-.event-detail h4 {
-    margin-bottom: 0.5rem;
-}
-
-.event-detail p {
-    margin: 0.25rem 0;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-    .calendar-day {
-        min-height: 60px;
-        padding: 0.25rem;
-    }
-    
-    .day-number {
-        font-size: 0.85rem;
-    }
-    
-    .event-item {
-        font-size: 0.65rem;
-    }
-    
-    .modal-content {
-        width: 95%;
-        max-width: none;
-    }
-}
-
-/* Enhanced Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -456,6 +375,39 @@ textarea.form-input {
     opacity: 0.7;
 }
 
+.event-completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.date-range-badge {
+    display: inline-block;
+    background: var(--bg-card-hover);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 60px;
+        padding: 0.25rem;
+    }
+    
+    .day-number {
+        font-size: 0.85rem;
+    }
+    
+    .event-item {
+        font-size: 0.65rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        max-width: none;
+    }
+}
 </style>
 @endpush
 
@@ -463,7 +415,7 @@ textarea.form-input {
 <script>
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
-let allEvents = [];
+let allEvents = {};
 
 $(document).ready(function() {
     renderCalendar();
@@ -473,6 +425,17 @@ $(document).ready(function() {
     // Bind Add Event button
     $('#addEventBtn').click(function() {
         openAddMilestoneModal();
+    });
+    
+    // Validate date range
+    $('#milestone-start-date, #milestone-date').on('change', function() {
+        const startDate = $('#milestone-start-date').val();
+        const endDate = $('#milestone-date').val();
+        
+        if (startDate && endDate && startDate > endDate) {
+            showToast('End date must be after start date', 'error');
+            $('#milestone-date').val('');
+        }
     });
 });
 
@@ -485,41 +448,23 @@ function loadProjects() {
                 options += `<option value="${project.id}">${project.name}</option>`;
             });
             $('#milestone-project').html(options);
+        })
+        .fail(() => {
+            showToast('Failed to load projects', 'error');
         });
 }
 
 function loadEvents() {
-    // Load both events and tasks
-    Promise.all([
-        $.get(`/api/v1/calendar/month/${currentYear}/${currentMonth + 1}`),
-        $.get('/api/v1/tasks') // Load all tasks
-    ])
-    .then(([eventsResponse, tasksResponse]) => {
-        allEvents = eventsResponse.events || {};
-        
-        // Add tasks to calendar events
-        const tasks = tasksResponse.data || tasksResponse || [];
-        tasks.forEach(task => {
-            if (task.deadline) {
-                const deadlineDate = new Date(task.deadline).toISOString().split('T')[0];
-                if (!allEvents[deadlineDate]) {
-                    allEvents[deadlineDate] = [];
-                }
-                // Mark as task
-                allEvents[deadlineDate].push({
-                    ...task,
-                    isTask: true,
-                    title: task.title,
-                    type: 'task-deadline'
-                });
-            }
+    $.get(`/api/v1/calendar/month/${currentYear}/${currentMonth + 1}`)
+        .done(response => {
+            console.log('Calendar response:', response);
+            allEvents = response.events || {};
+            renderCalendar();
+        })
+        .fail(error => {
+            console.error('Failed to load events:', error);
+            showToast('Failed to load calendar data', 'error');
         });
-        
-        renderCalendar();
-    })
-    .catch(() => {
-        showToast('Failed to load calendar data', 'error');
-    });
 }
 
 function renderCalendar() {
@@ -549,19 +494,31 @@ function renderCalendar() {
         const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
         const dayEvents = allEvents[date] || [];
         
+        // Remove duplicate events (same id appearing multiple times)
+        const uniqueEvents = dayEvents.reduce((acc, event) => {
+            if (!acc.find(e => e.id === event.id)) {
+                acc.push(event);
+            }
+            return acc;
+        }, []);
+        
         html += `<div class="calendar-day ${isToday ? 'today' : ''}" onclick="showDayEvents('${date}')">
             <div class="day-number">${day}</div>
             <div class="day-events">`;
         
-        dayEvents.slice(0, 3).forEach(event => {
-            html += `<div class="event-item" style="background: ${event.color}15; border-left: 3px solid ${event.color};">
+        uniqueEvents.slice(0, 3).forEach(event => {
+            const completedClass = event.is_completed ? 'event-completed' : '';
+            const isSpanning = event.start_date && event.end_date && event.start_date !== event.end_date;
+            
+            html += `<div class="event-item ${completedClass} ${isSpanning ? 'event-span' : ''}" 
+                     style="background: ${event.color}15; border-left-color: ${event.color};">
                 ${event.title}
             </div>`;
         });
         
-        if (dayEvents.length > 3) {
+        if (uniqueEvents.length > 3) {
             html += `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
-                +${dayEvents.length - 3} more
+                +${uniqueEvents.length - 3} more
             </div>`;
         }
         
@@ -606,23 +563,61 @@ function goToToday() {
 
 function showDayEvents(date) {
     const events = allEvents[date] || [];
-    $('#modal-title').text(`Events on ${new Date(date).toLocaleDateString()}`);
+    const dateObj = new Date(date + 'T00:00:00');
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    $('#modal-title').text(`Events on ${formattedDate}`);
+    
+    // Remove duplicate events
+    const uniqueEvents = events.reduce((acc, event) => {
+        if (!acc.find(e => e.id === event.id)) {
+            acc.push(event);
+        }
+        return acc;
+    }, []);
     
     let html = '';
-    if (events.length === 0) {
-        html = '<p style="color: var(--text-muted); text-align: center;">No events on this date</p>';
+    if (uniqueEvents.length === 0) {
+        html = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No events on this date</p>';
     } else {
-        events.forEach(event => {
+        uniqueEvents.forEach(event => {
+            const completedBadge = event.is_completed 
+                ? '<span style="background: #10B981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">Completed</span>' 
+                : '';
+            
+            const assigneesInfo = event.assignees 
+                ? `<p><i class="fas fa-users"></i> Assigned to: ${event.assignees}</p>` 
+                : '';
+            
+            const dateRangeInfo = event.start_date && event.end_date && event.start_date !== event.end_date
+                ? `<p><i class="fas fa-calendar-week"></i> Duration: ${formatDate(event.start_date)} - ${formatDate(event.end_date)}</p>`
+                : '';
+            
             html += `<div class="event-detail" style="border-left-color: ${event.color};">
-                <h4>${event.title}</h4>
+                <h4>
+                    ${event.title}
+                    ${completedBadge}
+                </h4>
                 <p><i class="fas fa-project-diagram"></i> ${event.project}</p>
                 <p><i class="fas fa-tag"></i> ${event.type}</p>
+                ${dateRangeInfo}
+                ${assigneesInfo}
             </div>`;
         });
     }
     
     $('#modal-events').html(html);
     $('#eventModal').addClass('show');
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function closeEventModal() {
@@ -649,6 +644,7 @@ $('#milestoneForm').submit(function(e) {
         title: $('#milestone-title').val(),
         description: $('#milestone-description').val(),
         type: $('#milestone-type').val(),
+        start_date: $('#milestone-start-date').val() || null,
         scheduled_date: $('#milestone-date').val(),
         scheduled_time: $('#milestone-time').val() || null,
     };

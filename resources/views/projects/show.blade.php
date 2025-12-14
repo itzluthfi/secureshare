@@ -154,6 +154,14 @@
         </div>
     </div>
 
+    @php
+        $currentUser = auth()->user();
+        $projectMember = $project->members->firstWhere('id', $currentUser->id);
+        $isAdmin = $currentUser->isAdmin();
+        // Check if user is restricted (Member role and not Admin)
+        $isRestricted = !$isAdmin && ($projectMember && $projectMember->pivot->role === 'member');
+    @endphp
+
     <!-- Task Modal -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
@@ -181,6 +189,7 @@
                             <option value="done">Done</option>
                         </select>
                     </div>
+                    @if(!$isRestricted)
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>Assign To</label>
@@ -207,6 +216,7 @@
                             <input type="date" id="task-deadline" class="form-input">
                         </div>
                     </div>
+                    @endif
                     <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
                         <button type="submit" class="btn btn-primary">
@@ -1049,6 +1059,7 @@
                 status: $('#task-status').val(),
                 priority: $('#task-priority').val(),
                 assignees: $('#task-assignee').val() || [],
+                start_date: $('#task-start-date').val() || null,
                 deadline: $('#task-deadline').val() || null
             };
 
@@ -1077,6 +1088,7 @@
                     $('#task-status').val(task.status);
                     $('#task-assignee').val(task.assignees ? task.assignees.map(a => a.id) : []);
                     $('#task-priority').val(task.priority);
+                    $('#task-start-date').val(task.start_date ? task.start_date.split('T')[0] : '');
                     $('#task-deadline').val(task.deadline ? task.deadline.split('T')[0] : '');
                     
                     // Initialize Select2
@@ -1088,6 +1100,9 @@
                         });
                     }
                     $('#task-assignee').trigger('change');
+                    
+                    // Select2 and values are populated above. 
+                    // Permission visibility is handled by Blade if directive.
                     
                     $('#taskModal').addClass('show');
                 });

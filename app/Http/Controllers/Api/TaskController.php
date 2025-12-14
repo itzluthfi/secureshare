@@ -116,6 +116,7 @@ class TaskController extends Controller
             'priority' => 'sometimes|in:low,medium,high',
             'assignees' => 'nullable|array',
             'assignees.*' => 'exists:users,id',
+            'start_date' => 'nullable|date',
             'deadline' => 'nullable|date',
         ]);
 
@@ -127,6 +128,7 @@ class TaskController extends Controller
             'priority' => $request->priority ?? 'medium',
             'assigned_to' => $request->assigned_to,
             'created_by' => $request->user()->id,
+            'start_date' => $request->start_date,
             'deadline' => $request->deadline,
         ]);
         
@@ -201,16 +203,45 @@ class TaskController extends Controller
 
         $oldValues = $task->toArray();
 
+        $user = $request->user();
+        
+        // Check if user is admin or project owner/manager
+        $isRestricted = false;
+        if (!$user->isAdmin()) {
+            $projectMember = $task->project->members()->where('user_id', $user->id)->first();
+            if ($projectMember && $projectMember->pivot->role === 'member') {
+                $isRestricted = true;
+            }
+        }
+
         $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'status' => 'sometimes|in:todo,in_progress,done',
             'priority' => 'sometimes|in:low,medium,high',
             'assigned_to' => 'nullable|exists:users,id',
+            'assignees' => 'nullable|array',
+            'assignees.*' => 'exists:users,id',
+            'start_date' => 'nullable|date',
             'deadline' => 'nullable|date',
         ]);
 
-        $task->update($request->only(['title', 'description', 'status', 'priority', 'assigned_to', 'deadline']));
+        $dataToUpdate = $request->only(['title', 'description', 'status', 'priority', 'assigned_to', 'start_date', 'deadline']);
+
+        // If user is restricted (member), only allow description and status
+        if ($isRestricted) {
+            $dataToUpdate = $request->only(['description', 'status']);
+        }
+
+        $task->update($dataToUpdate);
+
+        // Sync assignees if provided and user is not restricted
+        if (!$isRestricted && $request->has('assignees')) {
+            $task->assignees()->sync($request->assignees);
+            
+            // If only one assignee and assigned_to is not set explicitly, maybe set it?
+            // For now, let's assume frontend sends both or we rely on pivot.
+        }
 
         $this->auditLog->logUpdate($task, $oldValues, "Task updated: {$task->title}");
 

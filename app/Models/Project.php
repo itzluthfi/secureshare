@@ -31,7 +31,6 @@ class Project extends Model
     {
         return $this->belongsToMany(User::class, 'project_members')
             ->withPivot('role', 'status', 'responded_at')
-            ->wherePivot('status', 'accepted')
             ->withTimestamps();
     }
     
