@@ -24,7 +24,6 @@ class Task extends Model
         'description',
         'status',
         'priority',
-        'assigned_to',
         'created_by',
         'deadline',
     ];
@@ -39,9 +38,11 @@ class Task extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function assignee()
+    public function assignees()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsToMany(User::class, 'task_assignees')
+            ->withTimestamps()
+            ->withPivot('assigned_at');
     }
 
     public function creator()

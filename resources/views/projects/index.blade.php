@@ -4,12 +4,12 @@
 
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h1>Projects</h1>
-    @auth
-        @if(auth()->user()->isAdmin() || auth()->user()->isManager())
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-folder-open"></i> My Projects</h1>
+        @can('create', App\Models\Project::class)
             <a href="{{ route('projects.create') }}" class="btn btn-primary">+ New Project</a>
-        @endif
-    @endauth
+        @endcan
+    </div>
 </div>
 
 <div id="projectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
@@ -57,7 +57,7 @@ $(document).ready(function() {
                 $('#projectsGrid').html(html);
                 console.log('5. ✅ Projects rendered to DOM');
             } else {
-                $('#projectsGrid').html('<p style="color: #6B7280;">No projects found. <a href="/projects/create" style="color: var(--primary-blue);">Create one!</a></p>');
+                $('#projectsGrid').html('<p style="color: #6B7280;">No projects found.</p>');
                 console.log('5. No projects to display');
             }
         })

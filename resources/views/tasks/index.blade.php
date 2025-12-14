@@ -262,7 +262,12 @@ let currentDraggedTask = null;
 
 $(document).ready(function() {
     loadProjects();
-    loadTasks();
+    loadAllTasks();
+    
+    // Bind New Task button
+    $('#newTaskBtn').click(function() {
+        openAddTaskModal();
+    });
 });
 
 function loadProjects() {

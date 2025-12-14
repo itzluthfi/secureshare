@@ -18,21 +18,47 @@ class UserController extends Controller
     }
 
     /**
-     * Display a listing of users (Admin only)
+     * Display a listing of users (Role-based filtering)
      */
     public function index(Request $request)
     {
-        $users = User::query()
-            ->when($request->role, function ($query) use ($request) {
-                $query->where('role', $request->role);
+        $currentUser = $request->user();
+        
+        // Role-based filtering
+        if ($currentUser->isAdmin()) {
+            // Admin can see ALL users
+            $users = User::orderBy('name')->get();
+        } 
+        elseif ($currentUser->isManager()) {
+            // Manager can see all members, but NOT admins
+            $users = User::whereIn('role', ['manager', 'member'])
+                ->orderBy('name')
+                ->get();
+        } 
+        else {
+            // Member can ONLY see users in same projects
+            $projectIds = $currentUser->projects()->pluck('projects.id');
+            
+            $users = User::where(function($query) use ($projectIds, $currentUser) {
+                $query->whereHas('projects', function($q) use ($projectIds) {
+                    $q->whereIn('projects.id', $projectIds);
+                })
+                ->orWhereHas('createdProjects', function($q) use ($projectIds) {
+                    $q->whereIn('projects.id', $projectIds);
+                });
             })
-            ->when($request->search, function ($query) use ($request) {
-                $query->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%");
-            })
-            ->paginate(15);
-
-        return response()->json($users);
+            ->where('id', '!=', $currentUser->id) // Exclude self
+            ->orderBy('name')
+            ->get();
+            
+            // Always include self
+            $users->prepend($currentUser);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $users
+        ]);
     }
 
     /**

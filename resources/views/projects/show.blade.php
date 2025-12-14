@@ -9,18 +9,17 @@
                 <i class="fas fa-arrow-left"></i> Back to Projects
             </a>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <div>
-                <h1 class="page-title" id="project-name">Loading...</h1>
-                <p class="page-subtitle" id="project-description"></p>
+                <h1 class="page-title" id="project-name" style="margin-bottom: 0.5rem;">Loading...</h1>
+                <p class="page-subtitle" id="project-description" style="color: var(--text-muted);">Loading...</p>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-                @can('update', $project)
-                <button class="btn btn-secondary btn-sm" id="editProjectBtn">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
+                @can('update', $project ?? App\Models\Project::class)
+                    <button class="btn btn-secondary" id="editProjectBtn" title="Edit Project">
+                        <i class="fas fa-edit"></i> Edit Project
+                    </button>
                 @endcan
-                
                 @can('manageMembers', $project)
                 <button class="btn btn-primary" id="inviteMemberBtn">
                     <i class="fas fa-user-plus"></i> Invite Member
@@ -66,7 +65,7 @@
         <!-- Kanban Board -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
             <!-- To Do Column -->
-            <div class="kanban-column">
+            <div class="kanban-column" data-status="todo">
                 <div class="kanban-header" style="background: var(--text-muted);">
                     <i class="fas fa-circle"></i>
                     <span>To Do</span>
@@ -78,7 +77,7 @@
             </div>
 
             <!-- In Progress Column -->
-            <div class="kanban-column">
+            <div class="kanban-column" data-status="in_progress">
                 <div class="kanban-header" style="background: var(--warning);">
                     <i class="fas fa-spinner"></i>
                     <span>In Progress</span>
@@ -90,7 +89,7 @@
             </div>
 
             <!-- Done Column -->
-            <div class="kanban-column">
+            <div class="kanban-column" data-status="done">
                 <div class="kanban-header" style="background: var(--success);">
                     <i class="fas fa-check-circle"></i>
                     <span>Done</span>
@@ -177,8 +176,8 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>Assign To</label>
-                            <select id="task-assignee" class="form-input">
-                                <option value="">Unassigned</option>
+                            <select id="task-assignee" class="form-input" multiple>
+                                <option value="">Select assignees...</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -193,11 +192,11 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>Start Date</label>
-                            <input type="datetime-local" id="task-start-date" class="form-input">
+                            <input type="date" id="task-start-date" class="form-input">
                         </div>
                         <div class="form-group">
                             <label>Deadline</label>
-                            <input type="datetime-local" id="task-deadline" class="form-input">
+                            <input type="date" id="task-deadline" class="form-input">
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
@@ -245,6 +244,33 @@
             </div>
         </div>
     </div>
+    <!-- Edit Project Modal -->
+<div id="editProjectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Project</h2>
+            <button class="modal-close" onclick="closeEditProjectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editProjectForm">
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" id="edit-project-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="edit-project-description" class="form-input" rows="4"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditProjectModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -536,7 +562,8 @@
 
 @push('scripts')
     <script>
-        let projectId = {{ $project->id ?? 0 }};
+        const projectId = {{ $project->id }};
+        let currentProject = null; // Store current project data
         let projectData = null;
         let members = [];
 
@@ -587,7 +614,9 @@
         function loadProjectDetails() {
             console.log('Loading project:', projectId);
             $.get(`/api/v1/projects/${projectId}`)
-                .done(function (project) {
+                .done(function (response) {
+                    const project = response.data || response;
+                    currentProject = project; // Store for edit modal
                     console.log('Project loaded:', project);
                     projectData = project;
                     
@@ -691,23 +720,75 @@
             let html = '';
             tasks.forEach(task => {
                 const deadline = task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline';
-                const assignee = task.assignee ? task.assignee.name : 'Unassigned';
+                
+                // Handle multiple assignees
+                let assigneesHtml = '';
+                if (task.assignees && task.assignees.length > 0) {
+                    assigneesHtml = task.assignees.map(a => `<span class="assignee-badge">${a.name}</span>`).join(' ');
+                } else {
+                    assigneesHtml = '<span style="color: var(--text-muted);">Unassigned</span>';
+                }
 
                 html += `
-                <div class="task-card" onclick="editTask(${task.id})">
-                    <div class="task-card-title">${task.title}</div>
+                <div class="task-card" draggable="true" data-task-id="${task.id}" data-status="${status}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div class="task-card-title">${task.title}</div>
+                        <button onclick="editTask(${task.id})" style="background: none; border: none; color: var(--primary-blue); cursor: pointer; padding: 0.25rem;" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     <div class="task-card-meta">
-                        <span><i class="fas fa-user"></i> ${assignee}</span>
+                        <span><i class="fas fa-user"></i> ${assigneesHtml}</span>
                         <span><i class="fas fa-calendar"></i> ${deadline}</span>
                     </div>
-                    <div style="margin-top: 0.5rem;">
-                        <span class="priority-badge priority-${task.priority}">${task.priority}</span>
-                    </div>
                 </div>
-            `;
+                `;
             });
 
             $(`#${containerId}`).html(html);
+            
+            // Add drag and drop handlers
+            $('.task-card').on('dragstart', function(e) {
+                e.originalEvent.dataTransfer.setData('taskId', $(this).data('task-id'));
+                e.originalEvent.dataTransfer.setData('oldStatus', $(this).data('status'));
+            });
+            
+            $('.kanban-tasks').on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('drag-over');
+            });
+            
+            $('.kanban-tasks').on('dragleave', function(e) {
+                $(this).removeClass('drag-over');
+            });
+            
+            $('.kanban-tasks').on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('drag-over');
+                
+                const taskId = e.originalEvent.dataTransfer.getData('taskId');
+                const oldStatus = e.originalEvent.dataTransfer.getData('oldStatus');
+                const newStatus = $(this).parent().data('status');
+                
+                if (oldStatus !== newStatus) {
+                    updateTaskStatus(taskId, newStatus);
+                }
+            });
+        }
+        
+        function updateTaskStatus(taskId, newStatus) {
+            $.ajax({
+                url: `/api/v1/tasks/${taskId}`,
+                method: 'PUT',
+                data: { status: newStatus },
+                success: function() {
+                    showToast('Task status updated!', 'success');
+                    loadTasks(); // Changed from loadTasksData to loadTasks
+                },
+                error: function() {
+                    showToast('Failed to update task', 'error');
+                }
+            });
         }
 
         function loadMembers() {
@@ -778,13 +859,24 @@
 
         function openTaskModal() {
             $('#task-modal-title').text('Create Task');
-            $('#task-id').val('');
             $('#taskForm')[0].reset();
+            $('#task-id').val('');
             $('#taskModal').addClass('show');
+            
+            // Initialize Select2 for multiple assignees
+            $('#task-assignee').select2({
+                placeholder: 'Select assignees',
+                allowClear: true,
+                width: '100%'
+            });
         }
 
         function closeTaskModal() {
             $('#taskModal').removeClass('show');
+            // Destroy Select2 instance when modal closes to prevent issues on re-opening
+            if ($('#task-assignee').data('select2')) {
+                $('#task-assignee').select2('destroy');
+            }
         }
 
         function openInviteMemberModal() {
@@ -817,6 +909,41 @@
             $('#inviteMemberForm')[0].reset();
         }
 
+        // Edit Project Functions
+        function openEditProjectModal() {
+            $('#edit-project-name').val(currentProject.name);
+            $('#edit-project-description').val(currentProject.description || '');
+            $('#editProjectModal').addClass('show');
+        }
+
+        function closeEditProjectModal() {
+            $('#editProjectModal').removeClass('show');
+        }
+
+        $('#editProjectBtn').click(function() {
+            openEditProjectModal();
+        });
+
+        $('#editProjectForm').submit(function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: `/api/v1/projects/${projectId}`,
+                method: 'PUT',
+                data: {
+                    name: $('#edit-project-name').val(),
+                    description: $('#edit-project-description').val()
+                },
+                success: function(response) {
+                    showToast('Project updated successfully!', 'success');
+                    closeEditProjectModal();
+                    loadProjectDetails();
+                },
+                error: function(xhr) {
+                    showToast(xhr.responseJSON?.message || 'Failed to update project', 'error');
+                }
+            });
+        });
         function uploadDocument() {
             const formData = new FormData();
             const file = $('#doc-file')[0].files[0];
@@ -887,9 +1014,8 @@
             const data = {
                 title: $('#task-title').val(),
                 description: $('#task-description').val(),
-                assigned_to: $('#task-assignee').val() || null,
                 priority: $('#task-priority').val(),
-                start_date: $('#task-start-date').val() || null,
+                assignees: $('#task-assignee').val() || [],
                 deadline: $('#task-deadline').val() || null
             };
 

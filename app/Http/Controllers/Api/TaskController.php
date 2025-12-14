@@ -22,6 +22,35 @@ class TaskController extends Controller
     }
 
     /**
+     * Get all tasks for current user (for calendar)
+     */
+    public function getAllTasks(Request $request)
+    {
+        $user = $request->user();
+        
+        // Get all projects user has access to
+        $projectIds = Project::where(function($query) use ($user) {
+            $query->where('created_by', $user->id)
+                  ->orWhereHas('members', function($q) use ($user) {
+                      $q->where('user_id', $user->id);
+                  });
+        })->pluck('id');
+        
+        // Get all tasks from those projects
+        $tasks = Task::whereIn('project_id', $projectIds)
+            ->with(['assignees', 'creator', 'project'])
+            ->orderBy('deadline', 'asc')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $tasks
+        ]);
+    }
+
+    /**
+
+    /**
      * List project tasks
      * 
      * @OA\Get(
@@ -39,7 +68,7 @@ class TaskController extends Controller
         $this->authorize('view', $project);
 
         $tasks = Task::where('project_id', $projectId)
-            ->with(['assignee', 'creator'])
+            ->with(['assignees', 'creator'])
             ->when($request->status, function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
@@ -85,7 +114,8 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'priority' => 'sometimes|in:low,medium,high',
-            'assigned_to' => 'nullable|exists:users,id',
+            'assignees' => 'nullable|array',
+            'assignees.*' => 'exists:users,id',
             'deadline' => 'nullable|date',
         ]);
 
@@ -99,6 +129,11 @@ class TaskController extends Controller
             'created_by' => $request->user()->id,
             'deadline' => $request->deadline,
         ]);
+        
+        // Sync assignees
+        if ($request->has('assignees')) {
+            $task->assignees()->sync($request->assignees);
+        }
 
         // Create notification for assigned user
         if ($request->assigned_to) {

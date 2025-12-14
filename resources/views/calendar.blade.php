@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-header">
-    <h1 class="page-title"><i class="fas fa-calendar-alt"></i> Calendar</h1>
+    <h1 class="page-title"><i class="fas fa-calendar-alt"></i> Calendar - Events & Tasks</h1>
     @can('createMilestone')
     <button class="btn btn-primary" id="addEventBtn">
         <i class="fas fa-plus"></i> Add Event
@@ -489,14 +489,37 @@ function loadProjects() {
 }
 
 function loadEvents() {
-    $.get(`/api/v1/calendar/month/${currentYear}/${currentMonth + 1}`)
-        .done(response => {
-            allEvents = response.events || {};
-            renderCalendar();
-        })
-        .fail(() => {
-            showToast('Failed to load events', 'error');
+    // Load both events and tasks
+    Promise.all([
+        $.get(`/api/v1/calendar/month/${currentYear}/${currentMonth + 1}`),
+        $.get('/api/v1/tasks') // Load all tasks
+    ])
+    .then(([eventsResponse, tasksResponse]) => {
+        allEvents = eventsResponse.events || {};
+        
+        // Add tasks to calendar events
+        const tasks = tasksResponse.data || tasksResponse || [];
+        tasks.forEach(task => {
+            if (task.deadline) {
+                const deadlineDate = new Date(task.deadline).toISOString().split('T')[0];
+                if (!allEvents[deadlineDate]) {
+                    allEvents[deadlineDate] = [];
+                }
+                // Mark as task
+                allEvents[deadlineDate].push({
+                    ...task,
+                    isTask: true,
+                    title: task.title,
+                    type: 'task-deadline'
+                });
+            }
         });
+        
+        renderCalendar();
+    })
+    .catch(() => {
+        showToast('Failed to load calendar data', 'error');
+    });
 }
 
 function renderCalendar() {

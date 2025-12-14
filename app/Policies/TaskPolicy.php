@@ -29,8 +29,8 @@ class TaskPolicy
      */
     public function create(User $user): bool
     {
-        // All authenticated users (including members) can create tasks
-        return true;
+        // Only admin and manager can create tasks
+        return $user->isAdmin() || $user->isManager();
     }
 
     /**

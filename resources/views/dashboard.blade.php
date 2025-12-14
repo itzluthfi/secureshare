@@ -245,7 +245,11 @@ function loadRecentProjects() {
             const projects = response.data || response;
             
             if (!projects || projects.length === 0) {
-                $('#recent-projects').html('<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No projects yet. <a href="/projects/create" style="color: var(--primary-blue);">Create one!</a></p>');
+                @if(auth()->user()->isAdmin() || auth()->user()->isManager())
+                    $('#recent-projects').html('<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No projects yet. <a href="/projects/create" style="color: var(--primary-blue);">Create one!</a></p>');
+                @else
+                    $('#recent-projects').html('<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No projects yet. Contact your admin or manager to be added to a project.</p>');
+                @endif
                 return;
             }
             

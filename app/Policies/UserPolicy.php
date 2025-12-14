@@ -11,8 +11,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        // Only admins can access user management
-        return $user->isAdmin();
+        return true; // All authenticated users can view team
     }
 
     /**

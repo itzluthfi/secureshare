@@ -27,8 +27,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(funct
     Route::get('/auth/permissions', [AuthController::class, 'getPermissions']);
 
     // Users (Admin only)
+    // Users - GET index (team view) accessible to all authenticated users
+    Route::get('/users', [UserController::class, 'index']);
+    
+    // Users - Admin only operations
     Route::middleware(['App\Http\Middleware\CheckRole:admin'])->group(function () {
-        Route::apiResource('users', UserController::class);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::put('/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
     });
 
@@ -56,6 +63,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(funct
     Route::get('/documents/{documentId}/versions/{versionNumber}/download', [DocumentController::class, 'downloadVersion']);
 
     // Tasks
+    Route::get('/tasks', [TaskController::class, 'getAllTasks']); // Get all tasks for calendar
     Route::get('/projects/{projectId}/tasks', [TaskController::class, 'index']);
     Route::post('/projects/{projectId}/tasks', [TaskController::class, 'store']);
     Route::get('/tasks/{id}', [TaskController::class, 'show']);

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - SecureShare</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    @stack('styles')
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -498,7 +500,7 @@
                         @endif
                     </div>
                 </div>
-                <form action="{{ route('logout') }}" method="POST" style="margin: 0;" onsubmit="localStorage.clear();">
+                <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="margin: 0;">
                     @csrf
                     <button type="submit" class="logout-btn" title="Logout">
                         <i class="fas fa-sign-out-alt"></i>
@@ -540,6 +542,8 @@
     <div id="toast" class="toast"></div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // NO MORE CLIENT-SIDE AUTH CHECK!
         // Server-side middleware handles authentication now
@@ -632,6 +636,39 @@
             loadNotificationCount();
             setInterval(loadNotificationCount, 30000); // Every 30s
         });
+
+    // Logout confirmation with SweetAlert2
+    $('#logoutForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        
+        Swal.fire({
+            title: 'Logout Confirmation',
+            text: 'Are you sure you want to logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, logout',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Logging out...',
+                    text: 'Please wait',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                localStorage.clear();
+                form.submit();
+            }
+        });
+    });
     </script>
     @stack('scripts')
 </body>
