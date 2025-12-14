@@ -25,6 +25,13 @@
       background: #fafafa;
     }
     </style>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Swagger UI Styling -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('vendor/swagger-api/custom-swagger.css') }}">
+
     @if(config('l5-swagger.defaults.ui.display.dark_mode'))
         <style>
             body#dark-mode,

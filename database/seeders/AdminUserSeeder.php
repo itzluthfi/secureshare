@@ -13,7 +13,6 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create default admin user
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@secureshare.com',
@@ -23,7 +22,6 @@ class AdminUserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create a manager user
         User::create([
             'name' => 'Manager User',
             'email' => 'manager@secureshare.com',
@@ -33,10 +31,17 @@ class AdminUserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create a member user
         User::create([
             'name' => 'Member User',
             'email' => 'member@secureshare.com',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_MEMBER,
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+        User::create([
+            'name' => 'itzLuthfi',
+            'email' => 'luthfishidqi2@gmail.com',
             'password' => Hash::make('password'),
             'role' => User::ROLE_MEMBER,
             'is_active' => true,

@@ -15,12 +15,17 @@
                 <p class="page-subtitle" id="project-description"></p>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-secondary btn-sm" onclick="editProject()">
+                @can('update', $project)
+                <button class="btn btn-secondary btn-sm" id="editProjectBtn">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="btn btn-primary" onclick="openInviteMemberModal()">
+                @endcan
+                
+                @can('manageMembers', $project)
+                <button class="btn btn-primary" id="inviteMemberBtn">
                     <i class="fas fa-user-plus"></i> Invite Member
                 </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -38,9 +43,11 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Project Documents</h3>
-                <button class="btn btn-primary" onclick="openUploadModal()">
+                @can('create', [App\Models\Document::class, $project])
+                <button class="btn btn-primary" id="uploadDocumentBtn">
                     <i class="fas fa-upload"></i> Upload Document
                 </button>
+                @endcan
             </div>
             <div id="documents-list">
                 <p style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading documents...</p>

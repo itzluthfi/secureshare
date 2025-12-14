@@ -511,16 +511,17 @@
         // Login form
         $('#loginForm').submit(function(e) {
             e.preventDefault();
-            console.log('=== LOGIN FORM SUBMITTED ===');
             
-            const email = $('#login-email').val();
-            const password = $('#login-password').val();
+            const email = $('#loginEmail').val();
+            const password = $('#loginPassword').val();
+            const submitBtn = $(this).find('button[type="submit"]');
+            const originalBtnText = submitBtn.html();
             
-            console.log('Email:', email);
-            console.log('Password length:', password.length);
+            // Set loading state
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Signing in...');
             
             $.ajax({
-                url: '/api/v1/auth/login',
+                url: '/login',
                 method: 'POST',
                 data: { email, password },
                 headers: {
@@ -529,16 +530,30 @@
                 }
             })
             .done(function(response) {
-                console.log('=== LOGIN SUCCESS ===', response);
-                if (response.access_token) {
-                    localStorage.setItem('token', response.access_token);
+                if (response.token) {
+                    // Store token and user
+                    localStorage.setItem('token', response.token);
                     localStorage.setItem('user', JSON.stringify(response.user));
-                    window.location.href = '/dashboard';
+                    
+                    // Show success message
+                    showToast('Login successful! Redirecting...', 'success');
+                    
+                    // Update button to show success
+                    submitBtn.html('<i class="fas fa-check"></i> Success!');
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = response.redirect || '/dashboard';
+                    }, 800);
                 }
             })
             .fail(function(xhr) {
-                console.error('=== LOGIN FAILED ===', xhr);
-                alert(xhr.responseJSON?.message || 'Login failed');
+                // Reset button
+                submitBtn.prop('disabled', false).html(originalBtnText);
+                
+                // Show error message
+                const message = xhr.responseJSON?.message || 'Login failed. Please check your credentials.';
+                showToast(message, 'error');
             });
         });
         
@@ -546,18 +561,23 @@
         $('#registerForm').submit(function(e) {
             e.preventDefault();
             
-            const name = $('#register-name').val();
-            const email = $('#register-email').val();
-            const password = $('#register-password').val();
-            const password_confirmation = $('#register-password-confirm').val();
+            const name = $('#registerName').val();
+            const email = $('#registerEmail').val();
+            const password = $('#registerPassword').val();
+            const password_confirmation = $('#registerPasswordConfirmation').val();
+            const submitBtn = $(this).find('button[type="submit"]');
+            const originalBtnText = submitBtn.html();
             
             if (password !== password_confirmation) {
-                alert('Passwords do not match!');
+                showToast('Passwords do not match!', 'error');
                 return;
             }
             
+            // Set loading state
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating account...');
+            
             $.ajax({
-                url: '/api/v1/auth/register',
+                url: '/register',
                 method: 'POST',
                 data: { name, email, password, password_confirmation },
                 headers: {
@@ -566,21 +586,30 @@
                 }
             })
             .done(function(response) {
-                console.log('Registration success:', response);
-                if (response.access_token) {
-                    localStorage.setItem('token', response.access_token);
+                if (response.token) {
+                    localStorage.setItem('token', response.token);
                     localStorage.setItem('user', JSON.stringify(response.user));
-                    window.location.href = '/dashboard';
+                    
+                    showToast('Registration successful! Redirecting...', 'success');
+                    submitBtn.html('<i class="fas fa-check"></i> Success!');
+                    
+                    setTimeout(() => {
+                        window.location.href = response.redirect || '/dashboard';
+                    }, 800);
                 }
             })
             .fail(function(xhr) {
-                console.error('Registration failed:', xhr);
+                // Reset button
+                submitBtn.prop('disabled', false).html(originalBtnText);
+                
+                // Handle validation errors
                 const errors = xhr.responseJSON?.errors;
                 if (errors) {
-                    const errorMsg = Object.values(errors).flat().join('\n');
-                    alert(errorMsg);
+                    const errorMsgArray = Object.values(errors).flat();
+                    showToast(errorMsgArray.join('<br>'), 'error');
                 } else {
-                    alert(xhr.responseJSON?.message || 'Registration failed');
+                    const message = xhr.responseJSON?.message || 'Registration failed. Please try again.';
+                    showToast(message, 'error');
                 }
             });
         });

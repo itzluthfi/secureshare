@@ -48,24 +48,6 @@
         .sidebar-header {
             padding: 1.5rem;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .sidebar-close {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.25rem;
-            transition: color 0.3s;
-        }
-        
-        .sidebar-close:hover {
-            color: var(--text-primary);
         }
         
         .sidebar-logo {
@@ -74,7 +56,6 @@
             gap: 0.75rem;
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
         }
         
         .sidebar-logo i {
@@ -96,7 +77,6 @@
             color: var(--text-secondary);
             text-decoration: none;
             transition: all 0.3s;
-            position: relative;
         }
         
         .menu-item:hover {
@@ -113,16 +93,6 @@
         .menu-item i {
             width: 20px;
             text-align: center;
-        }
-        
-        .menu-badge {
-            margin-left: auto;
-            background: var(--danger);
-            color: white;
-            padding: 0.15rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
         }
         
         .sidebar-footer {
@@ -170,22 +140,10 @@
             font-size: 1.1rem;
         }
         
-        .hamburger-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-        
         /* Main Content */
         .main-container {
             margin-left: 260px;
-            width: calc(100% - 260px);
             min-height: 100vh;
-            transition: margin-left 0.3s, width 0.3s;
         }
         
         /* Top Navbar */
@@ -225,41 +183,13 @@
             color: var(--text-muted);
         }
         
-        .topnav-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
         .notif-bell {
-            position: relative;
             background: none;
             border: none;
             color: var(--text-secondary);
             font-size: 1.3rem;
             cursor: pointer;
             padding: 0.5rem;
-            transition: color 0.3s;
-        }
-        
-        .notif-bell:hover {
-            color: var(--text-primary);
-        }
-        
-        .notif-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: var(--danger);
-            color: white;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
         }
         
         /* Content Area */
@@ -332,106 +262,14 @@
             color: var(--text-primary);
         }
         
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-        
         .btn-sm {
             padding: 0.4rem 0.8rem;
             font-size: 0.85rem;
-        }
-        
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--bg-card);
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid var(--primary-blue);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            min-width: 300px;
-            animation: slideIn 0.3s;
-        }
-        
-        .toast.show { 
-            display: flex !important; 
-        }
-        
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: var(--danger); }
-        .toast.warning { border-left-color: var(--warning); }
-        .toast.info { border-left-color: var(--primary-blue); }
-        
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        /* Overlay */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 99;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .sidebar-overlay.show {
-            display: block;
-            opacity: 1;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100vh;
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                z-index: 1000;
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-container {
-                margin-left: 0 !important;
-                width: 100% !important;
-            }
-            
-            .hamburger-btn {
-                display: block;
-            }
-            
-            .search-box {
-                display: none;
-            }
-            
-            .sidebar-close {
-                display: block;
-            }
         }
     </style>
     @stack('styles')
 </head>
 <body>
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-    
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -439,13 +277,10 @@
                 <i class="fas fa-lock"></i>
                 <span>SecureShare</span>
             </div>
-            <button class="sidebar-close" onclick="toggleSidebar()" title="Close">
-                <i class="fas fa-times"></i>
-            </button>
         </div>
         
         <nav class="sidebar-menu">
-            <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard*') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
@@ -453,7 +288,7 @@
                 <i class="fas fa-folder"></i>
                 <span>Projects</span>
             </a>
-            <a href="{{ route('calendar') }}" class="menu-item {{ request()->routeIs('calendar') ? 'active' : '' }}">
+            <a href="/calendar" class="menu-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Calendar</span>
             </a>
@@ -465,32 +300,38 @@
                 <i class="fas fa-file-alt"></i>
                 <span>Documents</span>
             </a>
-            <a href="/inbox" class="menu-item">
-                <i class="fas fa-inbox"></i>
-                <span>Inbox</span>
-                <span class="menu-badge" id="inbox-count" style="display: none;">0</span>
-            </a>
-            <a href="/team" class="menu-item">
-                <i class="fas fa-users"></i>
-                <span>Team</span>
-            </a>
-            <a href="{{ route('admin.users') }}" class="menu-item" id="admin-menu" style="display: none;">
+            @can('viewAny', App\Models\User::class)
+            <a href="{{ route('admin.users') }}" class="menu-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
                 <i class="fas fa-user-shield"></i>
                 <span>Admin</span>
             </a>
+            @endcan
         </nav>
         
         <div class="sidebar-footer">
+            @auth
             <div class="user-profile">
-                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</div>
                 <div class="user-info">
-                    <div class="user-name" id="user-name">Loading...</div>
-                    <div class="user-role" id="user-role">member</div>
+                    <div class="user-name">{{ auth()->user()->name }}</div>
+                    <div class="user-role">
+                        @if(auth()->user()->isAdmin())
+                            Admin
+                        @elseif(auth()->user()->isManager())
+                            Manager
+                        @else
+                            Member
+                        @endif
+                    </div>
                 </div>
-                <button class="logout-btn" onclick="logout()" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <button type="submit" class="logout-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
             </div>
+            @endauth
         </div>
     </aside>
     
@@ -498,21 +339,14 @@
     <div class="main-container">
         <!-- Top Navbar -->
         <header class="topnav">
-            <button class="hamburger-btn" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
-            </button>
-            
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Search projects, tasks, documents...">
             </div>
             
-            <div class="topnav-actions">
-                <button class="notif-bell" onclick="toggleNotifications()">
-                    <i class="fas fa-bell"></i>
-                    <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
-                </button>
-            </div>
+            <button class="notif-bell">
+                <i class="fas fa-bell"></i>
+            </button>
         </header>
         
         <!-- Content -->
@@ -521,125 +355,19 @@
         </main>
     </div>
     
-    <!-- Toast -->
-    <div id="toast" class="toast"></div>
-    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Check authentication
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login';
-        }
-        
-        // Setup AJAX with token
+        // Setup CSRF Token
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'Authorization': 'Bearer ' + token,
                 'Accept': 'application/json'
             }
         });
         
-        // Toast notification with colors
-        function showToast(message, type = 'success') {
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-times-circle',
-                info: 'fa-info-circle',
-                warning: 'fa-exclamation-triangle'
-            };
-            
-            const colors = {
-                success: 'var(--success)',
-                error: 'var(--danger)',
-                info: 'var(--primary-blue)',
-                warning: 'var(--warning)'
-            };
-            
-            const icon = icons[type] || icons.success;
-            const color = colors[type] || colors.success;
-            
-            const toast = $('#toast');
-            toast.html(`
-                <i class="fas ${icon}" style="color: ${color}; font-size: 1.5rem;"></i>
-                <span style="flex: 1;">${message}</span>
-                <button onclick="$('#toast').removeClass('show')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 0;">
-                    <i class="fas fa-times"></i>
-                </button>
-            `);
-            toast.removeClass('error info warning success').addClass(type).addClass('show');
-            
-            // Auto close after 5 seconds
-            setTimeout(() => toast.removeClass('show'), 5000);
-        }
-        
-        // Logout function
-        function logout() {
-            $.post('/api/v1/auth/logout')
-                .always(function() {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/login';
-                });
-        }
-        
-        function toggleNotifications() {
-            window.location.href = '/inbox';
-        }
-        
-        function toggleSidebar() {
-            $('.sidebar').toggleClass('show');
-            $('#sidebar-overlay').toggleClass('show');
-        }
-        
-        // Load user info
-        function loadUserInfo() {
-            $.get('/api/v1/auth/me')
-                .done(function(response) {
-                    const user = response.user || response;
-                    localStorage.setItem('user', JSON.stringify(user));
-                    
-                    const initial = user.name.charAt(0).toUpperCase();
-                    $('#user-avatar').text(initial);
-                    $('#user-name').text(user.name);
-                    $('#user-role').text(user.role);
-                    
-                    // Show admin menu if user is admin
-                    if (user.role === 'admin') {
-                        $('#admin-menu').show();
-                    }
-                })
-                .fail(function() {
-                    console.log('Failed to load user info');
-                    localStorage.removeItem('token');
-                    window.location.href = '/login';
-                });
-        }
-        
-        // Load notifications count
-        function loadNotificationCount() {
-            $.get('/api/v1/notifications/unread-count')
-                .done(function(data) {
-                    const count = data.unread_count || 0;
-                    if (count > 0) {
-                        $('#notif-badge').text(count).show();
-                        $('#inbox-count').text(count).show();
-                    } else {
-                        $('#notif-badge').hide();
-                        $('#inbox-count').hide();
-                    }
-                })
-                .fail(function() {
-                    console.log('Failed to load notification count');
-                });
-        }
-        
         // Init
         $(document).ready(function() {
-            loadUserInfo();
-            loadNotificationCount();
-            setInterval(loadNotificationCount, 30000); // Every 30s
+            console.log('App loaded successfully!');
         });
     </script>
     @stack('scripts')

@@ -9,9 +9,11 @@
         <select id="projectFilter" class="form-input" style="width: 250px;">
             <option value="">All Projects</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddTaskModal()">
+        @can('create', App\Models\Task::class)
+        <button class="btn btn-primary" id="newTaskBtn">
             <i class="fas fa-plus"></i> New Task
         </button>
+        @endcan
     </div>
 </div>
 

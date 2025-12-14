@@ -5,13 +5,11 @@
 @section('content')
 <div class="page-header">
     <h1 class="page-title"><i class="fas fa-calendar-alt"></i> Calendar</h1>
-    @auth
-        @if(auth()->user()->isAdmin() || auth()->user()->isManager())
-            <button class="btn btn-primary" onclick="openAddMilestoneModal()">
-                <i class="fas fa-plus"></i> Add Event
-            </button>
-        @endif
-    @endauth
+    @can('createMilestone')
+    <button class="btn btn-primary" id="addEventBtn">
+        <i class="fas fa-plus"></i> Add Event
+    </button>
+    @endcan
 </div>
 
 <!-- Calendar Controls -->
