@@ -212,6 +212,7 @@ function renderNotifications(notifications) {
         
         html += `
             <div class="notif-item ${isUnread ? 'unread' : ''}" ${!isPendingInvitation ? `onclick="handleNotificationClick(${notif.id}, '${notif.type}', ${JSON.stringify(data).replace(/"/g, '&quot;')})"` : ''}>
+                <input type="checkbox" class="notif-checkbox" value="${notif.id}" onclick="event.stopPropagation();" onchange="toggleCheckboxVisibility()" style="margin-right: 1rem;">
                 <div class="notif-icon ${iconType}">
                     <i class="${iconClass}"></i>
                 </div>
@@ -345,6 +346,42 @@ function declineInvitation(notifId, projectId) {
         .fail(function(xhr) {
             showToast(xhr.responseJSON?.message || 'Failed to decline invitation', 'error');
         });
+}
+
+// NEW FUNCTIONS - Toggle checkbox visibility
+function toggleCheckboxVisibility() {
+    const checkedCount = $('.notif-checkbox:checked').length;
+    $('#markSelectedBtn').toggle(checkedCount > 0);
+}
+
+// NEW FUNCTIONS - Mark selected notifications as read  
+function markSelectedAsRead() {
+    const selected = [];
+    $('.notif-checkbox:checked').each(function() {
+        selected.push($(this).val());
+    });
+    
+    if (selected.length === 0) {
+        showToast('No notifications selected', 'warning');
+        return;
+    }
+    
+    let completed = 0;
+    selected.forEach(id => {
+        $.post(`/api/v1/notifications/${id}/mark-read`)
+            .done(() => {
+                completed++;
+                if (completed === selected.length) {
+                    showToast(`${selected.length} notification(s) marked as read`, 'success');
+                    loadNotifications();
+                    loadNotificationCount();
+                    $('#markSelectedBtn').hide();
+                }
+            })
+            .fail(() => {
+                showToast('Failed to mark notification', 'error');
+            });
+    });
 }
 </script>
 @endpush
