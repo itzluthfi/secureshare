@@ -541,7 +541,14 @@
         let members = [];
 
         $(document).ready(function () {
-            loadProjectDetails();
+    const projectId = window.location.pathname.split('/').pop();
+    
+    // Bind action buttons
+    $('#editProjectBtn').click(function() { editProject(); });
+    $('#inviteMemberBtn').click(function() { openInviteMemberModal(); });
+    $('#uploadDocumentBtn').click(function() { openUploadModal(); });
+    
+    loadProjectDetails();
 
             // Tab switching
             $('.tab-btn').click(function () {
@@ -781,7 +788,28 @@
         }
 
         function openInviteMemberModal() {
+            loadAvailableUsers(); // Load users when modal opens
             $('#inviteMemberModal').addClass('show');
+        }
+        
+        function loadAvailableUsers() {
+            // Load all users for the invite dropdown
+            $.get('/api/v1/users')
+                .done(function(response) {
+                    const users = response.data || response;
+                    let options = '<option value="">Select User</option>';
+                    users.forEach(user => {
+                        // Don't include users already in project
+                        const alreadyMember = members.some(m => m.id === user.id);
+                        if (!alreadyMember) {
+                            options += `<option value="${user.id}">${user.name} (${user.email})</option>`;
+                        }
+                    });
+                    $('#invite-user-id').html(options);
+                })
+                .fail(function() {
+                    showToast('Failed to load users', 'error');
+                });
         }
 
         function closeInviteMemberModal() {

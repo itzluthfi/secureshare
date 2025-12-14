@@ -466,9 +466,14 @@ let currentYear = new Date().getFullYear();
 let allEvents = [];
 
 $(document).ready(function() {
-    loadProjects();
-    loadEvents();
     renderCalendar();
+    loadEvents();
+    loadProjects();
+    
+    // Bind Add Event button
+    $('#addEventBtn').click(function() {
+        openAddMilestoneModal();
+    });
 });
 
 function loadProjects() {

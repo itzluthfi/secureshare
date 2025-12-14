@@ -498,7 +498,7 @@
                         @endif
                     </div>
                 </div>
-                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                <form action="{{ route('logout') }}" method="POST" style="margin: 0;" onsubmit="localStorage.clear();">
                     @csrf
                     <button type="submit" class="logout-btn" title="Logout">
                         <i class="fas fa-sign-out-alt"></i>
