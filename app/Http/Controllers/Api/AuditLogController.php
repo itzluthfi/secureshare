@@ -10,6 +10,16 @@ class AuditLogController extends Controller
 {
     /**
      * Display audit logs (Admin only)
+     * 
+     * @OA\Get(
+     *     path="/audit-logs",
+     *     tags={"Audit Logs"},
+     *     summary="List audit logs",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="user_id", in="query", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="action", in="query", @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Audit logs list")
+     * )
      */
     public function index(Request $request)
     {
@@ -34,6 +44,15 @@ class AuditLogController extends Controller
 
     /**
      * Display the specified audit log
+     * 
+     * @OA\Get(
+     *     path="/audit-logs/{id}",
+     *     tags={"Audit Logs"},
+     *     summary="Get audit log details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Log details")
+     * )
      */
     public function show($id)
     {
@@ -44,6 +63,14 @@ class AuditLogController extends Controller
 
     /**
      * Export audit logs as CSV (Admin only)
+     * 
+     * @OA\Get(
+     *     path="/audit-logs/export",
+     *     tags={"Audit Logs"},
+     *     summary="Export audit logs to CSV",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="CSV download")
+     * )
      */
     public function export(Request $request)
     {

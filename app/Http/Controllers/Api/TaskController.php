@@ -23,6 +23,14 @@ class TaskController extends Controller
 
     /**
      * Get all tasks for current user (for calendar)
+     * 
+     * @OA\Get(
+     *     path="/tasks/calendar",
+     *     tags={"Tasks"},
+     *     summary="Get all tasks for user (calendar)",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="User tasks")
+     * )
      */
     public function getAllTasks(Request $request)
     {
@@ -253,6 +261,22 @@ class TaskController extends Controller
 
     /**
      * Update task status
+     * 
+     * @OA\Put(
+     *     path="/tasks/{id}/status",
+     *     tags={"Tasks"},
+     *     summary="Update task status only",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", enum={"todo", "in_progress", "done"})
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Status updated")
+     * )
      */
     public function updateStatus(Request $request, $id)
     {

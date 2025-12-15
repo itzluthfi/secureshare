@@ -51,6 +51,26 @@ class DocumentController extends Controller
 
     /**
      * Upload and encrypt a document
+     * 
+     * @OA\Post(
+     *     path="/projects/{projectId}/documents",
+     *     tags={"Documents"},
+     *     summary="Upload new document",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"file"},
+     *                 @OA\Property(property="file", type="string", format="binary"),
+     *                 @OA\Property(property="name", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Document uploaded")
+     * )
      */
     public function store(Request $request, $projectId)
     {
@@ -101,6 +121,15 @@ class DocumentController extends Controller
 
     /**
      * Display the specified document
+     * 
+     * @OA\Get(
+     *     path="/documents/{id}",
+     *     tags={"Documents"},
+     *     summary="Get document details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Document details")
+     * )
      */
     public function show(Request $request, $id)
     {
@@ -112,6 +141,15 @@ class DocumentController extends Controller
 
     /**
      * Download and decrypt document
+     * 
+     * @OA\Get(
+     *     path="/documents/{id}/download",
+     *     tags={"Documents"},
+     *     summary="Download document",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="File download")
+     * )
      */
     public function download(Request $request, $id)
     {
@@ -132,6 +170,26 @@ class DocumentController extends Controller
 
     /**
      * Upload new version of document
+     * 
+     * @OA\Post(
+     *     path="/documents/{id}/versions",
+     *     tags={"Documents"},
+     *     summary="Upload new document version",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"file"},
+     *                 @OA\Property(property="file", type="string", format="binary"),
+     *                 @OA\Property(property="change_notes", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Version uploaded")
+     * )
      */
     public function uploadVersion(Request $request, $id)
     {
@@ -187,6 +245,15 @@ class DocumentController extends Controller
 
     /**
      * Get all versions of a document
+     * 
+     * @OA\Get(
+     *     path="/documents/{id}/versions",
+     *     tags={"Documents"},
+     *     summary="List document versions",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Versions list")
+     * )
      */
     public function versions(Request $request, $id)
     {
@@ -200,6 +267,16 @@ class DocumentController extends Controller
 
     /**
      * Download specific version
+     * 
+     * @OA\Get(
+     *     path="/documents/{documentId}/versions/{versionNumber}/download",
+     *     tags={"Documents"},
+     *     summary="Download document version",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="documentId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="versionNumber", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="File download")
+     * )
      */
     public function downloadVersion(Request $request, $documentId, $versionNumber)
     {
@@ -237,6 +314,20 @@ class DocumentController extends Controller
 
     /**
      * Update document metadata
+     * 
+     * @OA\Put(
+     *     path="/documents/{id}",
+     *     tags={"Documents"},
+     *     summary="Update document details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Document updated")
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -261,6 +352,15 @@ class DocumentController extends Controller
 
     /**
      * Delete document and all its versions
+     * 
+     * @OA\Delete(
+     *     path="/documents/{id}",
+     *     tags={"Documents"},
+     *     summary="Delete document",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Document deleted")
+     * )
      */
     public function destroy(Request $request, $id)
     {

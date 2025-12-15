@@ -14,6 +14,14 @@ class CalendarController extends Controller
 {
     /**
      * Get all calendar events
+     * 
+     * @OA\Get(
+     *     path="/calendar/events",
+     *     tags={"Calendar"},
+     *     summary="Get all calendar events",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Events list")
+     * )
      */
     public function getEvents(Request $request)
     {
@@ -92,6 +100,16 @@ class CalendarController extends Controller
     
     /**
      * Get events for specific month
+     * 
+     * @OA\Get(
+     *     path="/calendar/month/{year}/{month}",
+     *     tags={"Calendar"},
+     *     summary="Get calendar events for month",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="year", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="month", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Month events")
+     * )
      */
     public function getMonthView(Request $request, $year, $month)
     {
@@ -229,6 +247,24 @@ class CalendarController extends Controller
     
     /**
      * Create milestone
+     * 
+     * @OA\Post(
+     *     path="/milestones",
+     *     tags={"Calendar"},
+     *     summary="Create milestone",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"project_id","title","type","scheduled_date"},
+     *             @OA\Property(property="project_id", type="integer"),
+     *             @OA\Property(property="title", type="string"),
+     *             @OA\Property(property="type", type="string", enum={"deadline", "meeting", "review", "launch", "milestone"}),
+     *             @OA\Property(property="scheduled_date", type="string", format="date")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Milestone created")
+     * )
      */
     public function storeMilestone(Request $request)
     {
@@ -255,6 +291,22 @@ class CalendarController extends Controller
     
     /**
      * Update milestone
+     * 
+     * @OA\Put(
+     *     path="/milestones/{id}",
+     *     tags={"Calendar"},
+     *     summary="Update milestone",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="title", type="string"),
+     *             @OA\Property(property="description", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Milestone updated")
+     * )
      */
     public function updateMilestone(Request $request, $id)
     {
@@ -280,6 +332,15 @@ class CalendarController extends Controller
     
     /**
      * Delete milestone
+     * 
+     * @OA\Delete(
+     *     path="/milestones/{id}",
+     *     tags={"Calendar"},
+     *     summary="Delete milestone",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Milestone deleted")
+     * )
      */
     public function destroyMilestone($id)
     {

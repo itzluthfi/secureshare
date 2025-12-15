@@ -10,6 +10,14 @@ class NotificationController extends Controller
 {
     /**
      * Get user notifications
+     * 
+     * @OA\Get(
+     *     path="/notifications",
+     *     tags={"Notifications"},
+     *     summary="Get all notifications",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Notifications list")
+     * )
      */
     public function index(Request $request)
     {
@@ -22,6 +30,14 @@ class NotificationController extends Controller
 
     /**
      * Get unread notifications count
+     * 
+     * @OA\Get(
+     *     path="/notifications/unread-count",
+     *     tags={"Notifications"},
+     *     summary="Get unread count",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Unread count")
+     * )
      */
     public function unreadCount(Request $request)
     {
@@ -34,6 +50,15 @@ class NotificationController extends Controller
 
     /**
      * Mark notification as read
+     * 
+     * @OA\Put(
+     *     path="/notifications/{id}/read",
+     *     tags={"Notifications"},
+     *     summary="Mark notification as read",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Marked as read")
+     * )
      */
     public function markAsRead(Request $request, $id)
     {
@@ -49,6 +74,14 @@ class NotificationController extends Controller
 
     /**
      * Mark all notifications as read
+     * 
+     * @OA\Put(
+     *     path="/notifications/read-all",
+     *     tags={"Notifications"},
+     *     summary="Mark all as read",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="All marked as read")
+     * )
      */
     public function markAllAsRead(Request $request)
     {
@@ -63,6 +96,15 @@ class NotificationController extends Controller
 
     /**
      * Delete notification
+     * 
+     * @OA\Delete(
+     *     path="/notifications/{id}",
+     *     tags={"Notifications"},
+     *     summary="Delete notification",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Notification deleted")
+     * )
      */
     public function destroy(Request $request, $id)
     {

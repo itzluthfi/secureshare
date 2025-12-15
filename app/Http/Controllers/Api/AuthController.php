@@ -307,6 +307,23 @@ class AuthController extends Controller
 
     /**
      * Reset password
+     * 
+     * @OA\Post(
+     *     path="/auth/reset-password",
+     *     tags={"Authentication"},
+     *     summary="Reset password with token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"token","email","password","password_confirmation"},
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Password reset successfully")
+     * )
      */
     public function resetPassword(Request $request)
     {

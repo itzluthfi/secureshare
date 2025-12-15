@@ -19,6 +19,14 @@ class UserController extends Controller
 
     /**
      * Display a listing of users (Role-based filtering)
+     * 
+     * @OA\Get(
+     *     path="/users",
+     *     tags={"Users"},
+     *     summary="List users",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Users list")
+     * )
      */
     public function index(Request $request)
     {
@@ -63,6 +71,24 @@ class UserController extends Controller
 
     /**
      * Store a newly created user
+     * 
+     * @OA\Post(
+     *     path="/users",
+     *     tags={"Users"},
+     *     summary="Create new user",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","role"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password"),
+     *             @OA\Property(property="role", type="string", enum={"admin", "manager", "member"})
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="User created")
+     * )
      */
     public function store(Request $request)
     {
@@ -91,6 +117,15 @@ class UserController extends Controller
 
     /**
      * Display the specified user
+     * 
+     * @OA\Get(
+     *     path="/users/{user}",
+     *     tags={"Users"},
+     *     summary="Get user details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="User details")
+     * )
      */
     public function show(User $user)
     {
@@ -99,6 +134,22 @@ class UserController extends Controller
 
     /**
      * Update the specified user
+     * 
+     * @OA\Put(
+     *     path="/users/{user}",
+     *     tags={"Users"},
+     *     summary="Update user details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="is_active", type="boolean")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="User updated")
+     * )
      */
     public function update(Request $request, User $user)
     {
@@ -129,6 +180,15 @@ class UserController extends Controller
 
     /**
      * Remove the specified user
+     * 
+     * @OA\Delete(
+     *     path="/users/{user}",
+     *     tags={"Users"},
+     *     summary="Delete user",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="User deleted")
+     * )
      */
     public function destroy(User $user)
     {
@@ -145,6 +205,22 @@ class UserController extends Controller
 
     /**
      * Assign role to user
+     * 
+     * @OA\Put(
+     *     path="/users/{user}/role",
+     *     tags={"Users"},
+     *     summary="Assign user role",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="user", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"role"},
+     *             @OA\Property(property="role", type="string", enum={"admin", "manager", "member"})
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Role updated")
+     * )
      */
     public function assignRole(Request $request, User $user)
     {

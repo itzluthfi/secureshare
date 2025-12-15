@@ -191,6 +191,23 @@ $project->members()->attach($request->user()->id, [
 
     /**
      * Add member to project
+     * 
+     * @OA\Post(
+     *     path="/projects/{project}/members",
+     *     tags={"Projects"},
+     *     summary="Invite member to project",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="project", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id","role"},
+     *             @OA\Property(property="user_id", type="integer"),
+     *             @OA\Property(property="role", type="string", enum={"owner", "manager", "member"})
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Invitation sent")
+     * )
      */
     public function addMember(Request $request, Project $project)
     {
@@ -246,6 +263,16 @@ $project->members()->attach($request->user()->id, [
 
     /**
      * Remove member from project
+     * 
+     * @OA\Delete(
+     *     path="/projects/{project}/members/{userId}",
+     *     tags={"Projects"},
+     *     summary="Remove member from project",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="project", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="userId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Member removed")
+     * )
      */
     public function removeMember(Request $request, Project $project, $userId)
     {
@@ -274,6 +301,23 @@ $project->members()->attach($request->user()->id, [
 
     /**
      * Update member role
+     * 
+     * @OA\Put(
+     *     path="/projects/{project}/members/{userId}",
+     *     tags={"Projects"},
+     *     summary="Update member role",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="project", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="userId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"role"},
+     *             @OA\Property(property="role", type="string", enum={"owner", "manager", "member"})
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Role updated")
+     * )
      */
     public function updateMemberRole(Request $request, Project $project, $userId)
     {
@@ -307,6 +351,15 @@ $project->members()->attach($request->user()->id, [
     
     /**
      * Accept project invitation
+     * 
+     * @OA\Post(
+     *     path="/projects/{project}/invitation/accept",
+     *     tags={"Projects"},
+     *     summary="Accept project invitation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="project", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Invitation accepted")
+     * )
      */
     public function acceptInvitation(Request $request, Project $project)
     {
@@ -353,6 +406,15 @@ $project->members()->attach($request->user()->id, [
     
     /**
      * Decline project invitation
+     * 
+     * @OA\Post(
+     *     path="/projects/{project}/invitation/decline",
+     *     tags={"Projects"},
+     *     summary="Decline project invitation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="project", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Invitation declined")
+     * )
      */
     public function declineInvitation(Request $request, Project $project)
     {
@@ -395,6 +457,15 @@ $project->members()->attach($request->user()->id, [
     }
     /**
      * Get project activities
+     * 
+     * @OA\Get(
+     *     path="/projects/{projectId}/activities",
+     *     tags={"Projects"},
+     *     summary="Get project activity log",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Activity logs")
+     * )
      */
     public function getActivities($projectId)
     {

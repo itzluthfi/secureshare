@@ -23,6 +23,15 @@ class CommentController extends Controller
 
     /**
      * Display comments for a document
+     * 
+     * @OA\Get(
+     *     path="/documents/{documentId}/comments",
+     *     tags={"Comments"},
+     *     summary="Get document comments",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="documentId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Comments list")
+     * )
      */
     public function indexDocument(Request $request, $documentId)
     {
@@ -31,6 +40,15 @@ class CommentController extends Controller
 
     /**
      * Display comments for a project
+     * 
+     * @OA\Get(
+     *     path="/projects/{projectId}/comments",
+     *     tags={"Comments"},
+     *     summary="Get project comments",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Comments list")
+     * )
      */
     public function indexProject(Request $request, $projectId)
     {
@@ -55,6 +73,22 @@ class CommentController extends Controller
 
     /**
      * Store a new comment for document
+     * 
+     * @OA\Post(
+     *     path="/documents/{documentId}/comments",
+     *     tags={"Comments"},
+     *     summary="Add comment to document",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="documentId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"content"},
+     *             @OA\Property(property="content", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Comment added")
+     * )
      */
     public function storeDocument(Request $request, $documentId)
     {
@@ -63,6 +97,22 @@ class CommentController extends Controller
 
     /**
      * Store a new comment for project
+     * 
+     * @OA\Post(
+     *     path="/projects/{projectId}/comments",
+     *     tags={"Comments"},
+     *     summary="Add comment to project",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="projectId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"content"},
+     *             @OA\Property(property="content", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Comment added")
+     * )
      */
     public function storeProject(Request $request, $projectId)
     {
@@ -101,6 +151,22 @@ class CommentController extends Controller
      */
     /**
      * Reply to a comment
+     * 
+     * @OA\Post(
+     *     path="/comments/{commentId}/reply",
+     *     tags={"Comments"},
+     *     summary="Reply to comment",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="commentId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"content"},
+     *             @OA\Property(property="content", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Reply added")
+     * )
      */
     public function reply(Request $request, $commentId)
     {
@@ -161,6 +227,22 @@ class CommentController extends Controller
 
     /**
      * Update the specified comment
+     * 
+     * @OA\Put(
+     *     path="/comments/{id}",
+     *     tags={"Comments"},
+     *     summary="Update comment",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"content"},
+     *             @OA\Property(property="content", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Comment updated")
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -185,6 +267,15 @@ class CommentController extends Controller
 
     /**
      * Remove the specified comment
+     * 
+     * @OA\Delete(
+     *     path="/comments/{id}",
+     *     tags={"Comments"},
+     *     summary="Delete comment",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Comment deleted")
+     * )
      */
     public function destroy(Request $request, $id)
     {
