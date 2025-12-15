@@ -11,16 +11,17 @@ class Comment extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'document_id',
+        'commentable_id',
+        'commentable_type',
         'user_id',
         'parent_id',
         'content',
     ];
 
     // Relationships
-    public function document()
+    public function commentable()
     {
-        return $this->belongsTo(Document::class);
+        return $this->morphTo();
     }
 
     public function user()

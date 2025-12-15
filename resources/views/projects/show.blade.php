@@ -34,6 +34,7 @@
         <button class="tab-btn active" data-tab="documents"><i class="fas fa-file-alt"></i> Documents</button>
         <button class="tab-btn" data-tab="tasks"><i class="fas fa-tasks"></i> Tasks</button>
         <button class="tab-btn" data-tab="members"><i class="fas fa-users"></i> Members</button>
+        <button class="tab-btn" data-tab="comments"><i class="fas fa-comments"></i> Comments</button>
         <button class="tab-btn" data-tab="activity"><i class="fas fa-history"></i> Activity</button>
     </div>
 
@@ -109,6 +110,28 @@
             </div>
             <div id="members-list">
                 <p style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading members...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="comments-tab">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Project Comments</h3>
+            </div>
+            <div id="comments-list" style="max-height: 400px; overflow-y: auto; padding: 1rem;">
+                <!-- Comments loaded here -->
+                <p style="text-align: center; color: var(--text-muted);">Loading comments...</p>
+            </div>
+            <div class="card-footer" style="border-top: 1px solid var(--border); padding: 1rem;">
+                <form id="commentForm">
+                    <div class="form-group">
+                        <textarea id="comment-content" class="form-input" rows="3" placeholder="Write a comment..." required></textarea>
+                    </div>
+                    <div style="text-align: right; margin-top: 0.5rem;">
+                        <button type="submit" class="btn btn-primary">Post Comment</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -606,7 +629,9 @@
                 // Load tab data
                 if (tab === 'documents') loadDocuments();
                 else if (tab === 'tasks') loadTasks();
+                else if (tab === 'tasks') loadTasks();
                 else if (tab === 'members') loadMembers();
+                else if (tab === 'comments') loadProjectComments();
                 else if (tab === 'activity') loadActivity();
             });
 
@@ -614,6 +639,12 @@
             $('#uploadForm').submit(function (e) {
                 e.preventDefault();
                 uploadDocument();
+            });
+
+            // Comment form
+            $('#commentForm').submit(function (e) {
+                e.preventDefault();
+                postComment();
             });
 
             // Task form
@@ -870,6 +901,71 @@
 
                     $('#members-list').html(html);
                 });
+        }
+
+        function loadProjectComments() {
+            $.get(`/api/v1/projects/${projectId}/comments`)
+                .done(function (comments) {
+                    if (!comments || comments.length === 0) {
+                        $('#comments-list').html('<p style="text-align: center; padding: 2rem; color: var(--text-muted);">No comments yet. Be the first to share your thoughts!</p>');
+                        return;
+                    }
+
+                    let html = '';
+                    comments.forEach(comment => {
+                        const date = new Date(comment.created_at).toLocaleString();
+                        const userInitial = comment.user ? comment.user.name.charAt(0).toUpperCase() : '?';
+                        
+                        html += `
+                        <div class="comment-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div class="avatar" style="width: 40px; height: 40px; background: var(--primary-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                ${userInitial}
+                            </div>
+                            <div class="comment-content" style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <strong style="color: var(--text-primary);">${comment.user ? comment.user.name : 'Unknown User'}</strong>
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">${date}</span>
+                                </div>
+                                <div style="color: var(--text-secondary); white-space: pre-wrap;">${comment.content}</div>
+                            </div>
+                        </div>
+                        `;
+                    });
+
+                    $('#comments-list').html(html);
+                    // Scroll to bottom
+                    const list = document.getElementById('comments-list');
+                    if(list) list.scrollTop = list.scrollHeight;
+                })
+                .fail(function() {
+                    $('#comments-list').html('<p style="text-align: center; color: var(--danger);">Failed to load comments</p>');
+                });
+        }
+
+        function postComment() {
+            const content = $('#comment-content').val().trim();
+            if (!content) return;
+
+            const btn = $('#commentForm button[type="submit"]');
+            const originalText = btn.text();
+            btn.prop('disabled', true).text('Posting...');
+
+            $.ajax({
+                url: `/api/v1/projects/${projectId}/comments`,
+                method: 'POST',
+                data: { content: content },
+                success: function() {
+                    $('#comment-content').val('');
+                    loadProjectComments();
+                    showToast('Comment posted', 'success');
+                },
+                error: function(xhr) {
+                    showToast(xhr.responseJSON?.message || 'Failed to post comment', 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).text(originalText);
+                }
+            });
         }
 
         function loadActivity() {

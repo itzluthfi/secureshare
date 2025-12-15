@@ -75,6 +75,8 @@ class DocumentController extends Controller
             'file_path' => $encryptionData['encrypted_path'], // Encrypted path
             'file_type' => $encryptionData['mime_type'],
             'file_size' => $encryptionData['size'],
+            'encryption_key' => $encryptionData['encryption_key'],
+            'encryption_iv' => $encryptionData['encryption_iv'],
             'current_version' => 1,
             'uploaded_by' => $request->user()->id,
         ]);
@@ -122,7 +124,9 @@ class DocumentController extends Controller
         // Decrypt and stream download
         return $this->encryption->downloadDecrypted(
             $document->file_path,
-            $document->original_name
+            $document->original_name,
+            $document->encryption_key,
+            $document->encryption_iv
         );
     }
 
@@ -141,8 +145,13 @@ class DocumentController extends Controller
 
         $file = $request->file('file');
         
-        // Encrypt and store new version
-        $encryptionData = $this->encryption->encryptAndStore($file, "documents/{$document->project_id}");
+        // Encrypt and store new version (reusing document keys)
+        $encryptionData = $this->encryption->encryptAndStore(
+            $file, 
+            "documents/{$document->project_id}",
+            $document->encryption_key,
+            $document->encryption_iv
+        );
 
         // Increment version
         $newVersionNumber = $document->current_version + 1;

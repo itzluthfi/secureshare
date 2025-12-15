@@ -52,6 +52,11 @@ class Project extends Model
         return $this->hasMany(Task::class);
     }
 
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable')->orderBy('created_at', 'desc');
+    }
+
     // Helper methods
     public function addMember($userId, $role = 'member')
     {

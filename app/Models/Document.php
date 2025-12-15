@@ -51,12 +51,12 @@ class Document extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class)->whereNull('parent_id')->orderBy('created_at', 'desc');
+        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id')->orderBy('created_at', 'desc');
     }
 
     public function allComments()
     {
-        return $this->hasMany(Comment::class);
+        return $this->morphMany(Comment::class, 'commentable');
     }
 
     // Helper methods

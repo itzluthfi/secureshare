@@ -73,8 +73,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(funct
     Route::put('/tasks/{id}/status', [TaskController::class, 'updateStatus']);
 
     // Comments
-    Route::get('/documents/{documentId}/comments', [CommentController::class, 'index']);
-    Route::post('/documents/{documentId}/comments', [CommentController::class, 'store']);
+    // Comments
+    Route::get('/documents/{id}/comments', [CommentController::class, 'indexDocument']);
+    Route::post('/documents/{id}/comments', [CommentController::class, 'storeDocument']);
+    Route::get('/projects/{id}/comments', [CommentController::class, 'indexProject']);
+    Route::post('/projects/{id}/comments', [CommentController::class, 'storeProject']);
     Route::post('/comments/{id}/reply', [CommentController::class, 'reply']);
     Route::put('/comments/{id}', [CommentController::class, 'update']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);

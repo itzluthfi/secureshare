@@ -24,51 +24,71 @@ class CommentController extends Controller
     /**
      * Display comments for a document
      */
-    public function index(Request $request, $documentId)
+    public function indexDocument(Request $request, $documentId)
     {
-        $document = Document::findOrFail($documentId);
-        $this->authorize('view', $document);
+        return $this->getComments(Document::class, $documentId);
+    }
 
-        $comments = Comment::where('document_id', $documentId)
+    /**
+     * Display comments for a project
+     */
+    public function indexProject(Request $request, $projectId)
+    {
+        return $this->getComments(\App\Models\Project::class, $projectId);
+    }
+
+    /**
+     * Helper to get comments
+     */
+    private function getComments($modelClass, $id)
+    {
+        $model = $modelClass::findOrFail($id);
+        $this->authorize('view', $model);
+
+        $comments = $model->comments()
             ->whereNull('parent_id')
             ->with(['user', 'replies.user'])
-            ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json($comments);
     }
 
     /**
-     * Store a new comment
+     * Store a new comment for document
      */
-    public function store(Request $request, $documentId)
+    public function storeDocument(Request $request, $documentId)
     {
-        $document = Document::findOrFail($documentId);
-        $this->authorize('view', $document);
+        return $this->storeComment($request, Document::class, $documentId);
+    }
+
+    /**
+     * Store a new comment for project
+     */
+    public function storeProject(Request $request, $projectId)
+    {
+        return $this->storeComment($request, \App\Models\Project::class, $projectId);
+    }
+
+    /**
+     * Helper to store comment
+     */
+    private function storeComment(Request $request, $modelClass, $id)
+    {
+        $model = $modelClass::findOrFail($id);
+        $this->authorize('view', $model);
 
         $request->validate([
             'content' => 'required|string',
         ]);
 
-        $comment = Comment::create([
-            'document_id' => $documentId,
+        $comment = $model->comments()->create([
             'user_id' => $request->user()->id,
-            'parent_id' => null,
             'content' => $request->content,
         ]);
 
-        // Notify document uploader
-        if ($document->uploaded_by !== $request->user()->id) {
-            Notification::create([
-                'user_id' => $document->uploaded_by,
-                'type' => 'comment_added',
-                'title' => 'New Comment',
-                'message' => "{$request->user()->name} commented on {$document->name}",
-                'data' => ['document_id' => $documentId, 'comment_id' => $comment->id],
-            ]);
-        }
-
-        $this->auditLog->logCreate($comment, "Comment added to document: {$document->name}");
+        // Audit log
+        $type = class_basename($modelClass);
+        $this->auditLog->logCreate($comment, "Comment added to {$type}: {$model->name}");
 
         return response()->json([
             'message' => 'Comment added successfully',
@@ -79,19 +99,23 @@ class CommentController extends Controller
     /**
      * Reply to a comment
      */
+    /**
+     * Reply to a comment
+     */
     public function reply(Request $request, $commentId)
     {
         $parentComment = Comment::findOrFail($commentId);
-        $document = $parentComment->document;
+        $commentable = $parentComment->commentable;
         
-        $this->authorize('view', $document);
+        $this->authorize('view', $commentable);
 
         $request->validate([
             'content' => 'required|string',
         ]);
 
         $reply = Comment::create([
-            'document_id' => $parentComment->document_id,
+            'commentable_id' => $parentComment->commentable_id,
+            'commentable_type' => $parentComment->commentable_type,
             'user_id' => $request->user()->id,
             'parent_id' => $commentId,
             'content' => $request->content,
@@ -99,18 +123,32 @@ class CommentController extends Controller
 
         // Notify parent comment author
         if ($parentComment->user_id !== $request->user()->id) {
+            $data = [
+                'comment_id' => $reply->id,
+                'commentable_id' => $parentComment->commentable_id,
+                'commentable_type' => $parentComment->commentable_type
+            ];
+            
+            // Backwards compatibility for frontend if needed
+            if ($parentComment->commentable_type === Document::class) {
+                $data['document_id'] = $parentComment->commentable_id;
+            } elseif ($parentComment->commentable_type === \App\Models\Project::class) {
+                $data['project_id'] = $parentComment->commentable_id;
+            }
+
             Notification::create([
                 'user_id' => $parentComment->user_id,
                 'type' => 'comment_reply',
                 'title' => 'New Reply',
                 'message' => "{$request->user()->name} replied to your comment",
-                'data' => ['document_id' => $document->id, 'comment_id' => $reply->id],
+                'data' => $data,
             ]);
         }
 
+        $type = class_basename($parentComment->commentable_type);
         $this->auditLog->log(
             'comment_reply',
-            "Reply added to comment on document: {$document->name}",
+            "Reply added to comment on {$type}: {$commentable->name}",
             'App\Models\Comment',
             $reply->id
         );

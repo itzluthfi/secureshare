@@ -74,16 +74,19 @@
     </div>
 </div>
 
-<!-- Edit Task Modal -->
+<!-- Edit Task Modal (Replicated from projects/show.blade.php) -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Edit Task</h3>
+            <h3 id="task-modal-title">Edit Task</h3>
             <span class="modal-close" onclick="closeTaskModal()">&times;</span>
         </div>
         <div class="modal-body">
             <form id="taskForm">
                 <input type="hidden" id="task-id">
+                <!-- Hidden Project ID -->
+                <input type="hidden" id="task-project-id">
+                
                 <div class="form-group">
                     <label>Task Title *</label>
                     <input type="text" id="task-title" class="form-input" required>
@@ -100,31 +103,37 @@
                         <option value="done">Done</option>
                     </select>
                 </div>
-                <!-- Hidden Project ID -->
-                <input type="hidden" id="task-project-id">
-                
-                <div class="form-group">
-                    <label>Assignees</label>
-                    <select id="task-assignee" class="form-input" multiple>
-                        <!-- Options populated via JS -->
-                    </select>
+
+                <!-- Restricted Fields Wrapper for JS Toggling -->
+                <div id="task-restricted-fields">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Assign To</label>
+                            <select id="task-assignee" class="form-input" multiple>
+                                <option value="">Select assignees...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="task-priority" class="form-input">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <input type="date" id="task-start-date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Deadline</label>
+                            <input type="date" id="task-deadline" class="form-input">
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label>Priority</label>
-                        <select id="task-priority" class="form-input">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                     <div class="form-group">
-                        <label>Deadline</label>
-                        <input type="date" id="task-deadline" class="form-input">
-                    </div>
-                </div>
-               
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                     <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -137,7 +146,7 @@
 </div>
 
 <style>
-/* Modal Styles for Tasks Page */
+/* Re-using styles from project show page where possible */
 .modal {
     display: none;
     position: fixed;
@@ -216,6 +225,7 @@ textarea.form-input {
 
 @push('styles')
 <style>
+/* Kanban & List Styles */
 .filter-btn, .view-btn {
     padding: 0.6rem 1.2rem;
     background: var(--bg-card-hover);
@@ -334,11 +344,16 @@ textarea.form-input {
 let allTasks = [];
 let currentFilter = 'all';
 let currentView = 'kanban';
+const currentUser = @json(auth()->user());
 
 $(document).ready(function() {
-    loadMyTasks();
+    console.log("Tasks page script initialized");
+    loadTasks();
     
     // Filter buttons
+    $('#filter-btn').click(function() {
+        // ... (existing filter logic if any)
+    });
     $('.filter-btn').click(function() {
         currentFilter = $(this).data('filter');
         $('.filter-btn').removeClass('active');
@@ -361,75 +376,35 @@ $(document).ready(function() {
         }
         renderTasks();
     });
+
+    // Edit Task Form Submit
+    $('#taskForm').submit(function(e) {
+        e.preventDefault();
+        saveTask();
+    });
+
+    // Drag and Drop Logic Initialization
+    setupDragAndDrop();
 });
 
-function loadMyTasks() {
-    console.log('Starting loadMyTasks...');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    // Load all projects and get tasks assigned to me
-    $.get('/api/v1/projects')
-        .done(function(response) {
-            console.log('Projects fetched:', response);
-            const projects = response.data || response;
-            
-            if (!projects || projects.length === 0) {
-                 console.log('No projects found.');
-                 allTasks = [];
-                 renderTasks();
-                 return;
-            }
+function loadTasks() {
+    console.log('Loading tasks...');
+    $('#todo-tasks, #progress-tasks, #done-tasks, #tasks-list').html('<p style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading tasks...</p>');
 
-            let promises = [];
+    $.get('/api/v1/tasks')
+        .done(function(response) {
+            console.log('Tasks fetched:', response);
+            let tasks = response.data || response;
+            if (!tasks) tasks = [];
             
-            projects.forEach(project => {
-                promises.push(
-                    $.get(`/api/v1/projects/${project.id}/tasks`)
-                        .then(taskResponse => {
-                            console.log(`Tasks loaded for project ${project.id}`);
-                            return {
-                                project: project,
-                                tasks: (taskResponse.data || taskResponse).filter(t => {
-                                    const isAssignedTo = t.assigned_to === user.id;
-                                    const isAssignee = t.assignees && t.assignees.some(a => a.id === user.id);
-                                    return isAssignedTo || isAssignee;
-                                })
-                            };
-                        })
-                        .catch(error => {
-                            console.error(`Failed to load tasks for project ${project.id}:`, error);
-                            return { project: project, tasks: [] }; // Return empty on error to keep Promise.all alive
-                        })
-                );
-            });
-            
-            console.log(`Waiting for ${promises.length} promises...`);
-            
-            Promise.all(promises)
-                .then(results => {
-                    console.log('All promises resolved:', results);
-                    allTasks = [];
-                    results.forEach(result => {
-                        if (result.tasks) {
-                            result.tasks.forEach(task => {
-                                task.project = result.project;
-                                allTasks.push(task);
-                            });
-                        }
-                    });
-                    
-                    renderTasks();
-                })
-                .catch(error => {
-                    console.error('Error processing tasks:', error);
-                    showToast('Failed to load tasks', 'error');
-                    $('#todo-tasks, #progress-tasks, #done-tasks, #tasks-list').html('<p style="text-align: center; padding: 2rem; color: var(--danger);">Failed to load tasks</p>');
-                });
+            allTasks = tasks;
+            renderTasks();
         })
         .fail(function(xhr) {
-             console.error('Failed to load projects:', xhr);
-             showToast('Failed to load projects', 'error');
-             $('#todo-tasks, #progress-tasks, #done-tasks, #tasks-list').html('<p style="text-align: center; padding: 2rem; color: var(--danger);">Failed to load projects</p>');
+            console.error('Failed to load tasks:', xhr);
+            showToast('Failed to load tasks', 'error');
+            const errorHtml = '<p style="text-align: center; padding: 2rem; color: var(--danger);">Failed to load tasks</p>';
+            $('#todo-tasks, #progress-tasks, #done-tasks, #tasks-list').html(errorHtml);
         });
 }
 
@@ -439,6 +414,15 @@ function renderTasks() {
     if (currentFilter !== 'all') {
         filtered = allTasks.filter(t => t.status === currentFilter);
     }
+    
+    // Update counts
+    const todoCount = allTasks.filter(t => t.status === 'todo').length;
+    const progressCount = allTasks.filter(t => t.status === 'in_progress').length;
+    const doneCount = allTasks.filter(t => t.status === 'done').length;
+
+    $('#todo-count').text(todoCount);
+    $('#progress-count').text(progressCount);
+    $('#done-count').text(doneCount);
     
     if (currentView === 'kanban') {
         renderKanban(filtered);
@@ -452,16 +436,14 @@ function renderKanban(tasks) {
     const progressTasks = tasks.filter(t => t.status === 'in_progress');
     const doneTasks = tasks.filter(t => t.status === 'done');
     
-    $('#todo-count').text(todoTasks.length);
-    $('#progress-count').text(progressTasks.length);
-    $('#done-count').text(doneTasks.length);
-    
-    renderTaskColumn('todo-tasks', todoTasks);
-    renderTaskColumn('progress-tasks', progressTasks);
-    renderTaskColumn('done-tasks', doneTasks);
+    renderTaskColumn('todo', todoTasks);
+    renderTaskColumn('in_progress', progressTasks);
+    renderTaskColumn('done', doneTasks);
 }
 
-function renderTaskColumn(containerId, tasks) {
+function renderTaskColumn(status, tasks) {
+    const containerId = status === 'in_progress' ? 'progress-tasks' : `${status}-tasks`;
+    
     if (tasks.length === 0) {
         $(`#${containerId}`).html('<p style="text-align: center; padding: 2rem; color: var(--text-muted);">No tasks</p>');
         return;
@@ -471,27 +453,46 @@ function renderTaskColumn(containerId, tasks) {
     tasks.forEach(task => {
         const deadline = task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline';
         const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'done';
+        const projectId = task.project ? task.project.id : (task.project_id || '');
+        const projectName = task.project ? task.project.name : 'Unknown Project';
         
+        let assigneesHtml = '';
+        if (task.assignees && task.assignees.length > 0) {
+            assigneesHtml = '<div style="display: flex; -space-x-2: 0.5rem;" title="' + task.assignees.map(a => a.name).join(', ') + '">' + 
+                task.assignees.slice(0, 3).map(a => `
+                    <div style="width: 24px; height: 24px; background: var(--primary-blue); color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--bg-card); margin-right: -8px;">
+                        ${a.name.charAt(0).toUpperCase()}
+                    </div>
+                `).join('') +
+                (task.assignees.length > 3 ? `<div style="width: 24px; height: 24px; background: var(--bg-dark); color: var(--text-muted); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--border); margin-right: -8px;">+${task.assignees.length - 3}</div>` : '') +
+                '</div>';
+        } else {
+            assigneesHtml = '<span style="color: var(--text-muted); font-size: 0.8rem;">Unassigned</span>';
+        }
+
         html += `
-            <div class="task-card">
+            <div class="task-card" draggable="true" data-task-id="${task.id}" data-status="${status}">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div class="task-project" onclick="goToProject(${task.project.id})">
-                        <i class="fas fa-folder"></i> ${task.project.name}
+                    <div class="task-project" onclick="goToProject(${projectId})">
+                        <i class="fas fa-folder"></i> ${projectName}
                     </div>
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: start;">
-                     <div class="task-title" onclick="goToProject(${task.project.id})">${task.title}</div>
-                     <button class="btn btn-sm btn-secondary" onclick="editTask(${task.id})" title="Edit Task" style="padding: 0.2rem 0.5rem;">
-                        <i class="fas fa-edit"></i>
+                     <div class="task-title" onclick="goToProject(${projectId})">${task.title}</div>
+                     <button class="btn btn-sm btn-secondary" onclick="editTask(${task.id})" title="Edit Task" style="padding: 0.2rem 0.5rem; background: none; border: none; color: var(--text-secondary);">
+                        <i class="fas fa-eye"></i>
                     </button>
                 </div>
 
                 ${task.description ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</div>` : ''}
+                
                 <div class="task-meta">
                     <span ${isOverdue ? 'style="color: var(--danger);"' : ''}><i class="fas fa-calendar"></i> ${deadline}</span>
                 </div>
-                <div style="margin-top: 0.5rem;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                    ${assigneesHtml}
                     <span class="priority-badge priority-${task.priority}">${task.priority}</span>
                 </div>
             </div>
@@ -499,6 +500,45 @@ function renderTaskColumn(containerId, tasks) {
     });
     
     $(`#${containerId}`).html(html);
+
+    // Re-attach Drag and Drop handlers
+    setupDragAndDrop();
+}
+
+function setupDragAndDrop() {
+    $('.task-card').off('dragstart').on('dragstart', function(e) {
+        e.originalEvent.dataTransfer.setData('taskId', $(this).data('task-id'));
+        e.originalEvent.dataTransfer.setData('oldStatus', $(this).data('status'));
+    });
+    
+    $('.kanban-column').off('dragover').on('dragover', function(e) {
+        e.preventDefault();
+        $(this).css('background', 'var(--bg-card-hover)');
+    });
+    
+    $('.kanban-column').off('dragleave').on('dragleave', function(e) {
+        $(this).css('background', 'var(--bg-card)');
+    });
+    
+    $('.kanban-column').off('drop').on('drop', function(e) {
+        e.preventDefault();
+        $(this).css('background', 'var(--bg-card)');
+        
+        let newStatus = 'todo';
+        const column = $(e.target).closest('.kanban-column');
+
+        // Identify status from IDs inside the column
+        if (column.find('#progress-tasks').length) newStatus = 'in_progress';
+        if (column.find('#done-tasks').length) newStatus = 'done';
+        if (column.find('#todo-tasks').length) newStatus = 'todo';
+
+        const taskId = e.originalEvent.dataTransfer.getData('taskId');
+        const oldStatus = e.originalEvent.dataTransfer.getData('oldStatus');
+        
+        if (oldStatus !== newStatus && taskId) {
+            updateTaskStatus(taskId, newStatus);
+        }
+    });
 }
 
 function renderList(tasks) {
@@ -510,18 +550,34 @@ function renderList(tasks) {
     let html = '';
     tasks.forEach(task => {
         const deadline = task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline';
+        const projectId = task.project ? task.project.id : (task.project_id || '');
+        const projectName = task.project ? task.project.name : 'Unknown Project';
         const statusClass = task.status === 'done' ? 'success' : task.status === 'in_progress' ? 'warning' : 'text-muted';
         
+        let assigneesHtml = '';
+        if (task.assignees && task.assignees.length > 0) {
+            assigneesHtml = '<div style="display: flex; -space-x-2: 0.5rem; margin-right: 1rem;">' + 
+                task.assignees.slice(0,3).map(a => `
+                    <div title="${a.name}" style="width: 24px; height: 24px; background: var(--primary-blue); color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--bg-card); margin-right: -8px;">
+                        ${a.name.charAt(0).toUpperCase()}
+                    </div>
+                `).join('') + 
+                '</div>';
+        }
+
         html += `
-            <div class="task-list-item" onclick="goToProject(${task.project.id})">
+            <div class="task-list-item" onclick="goToProject(${projectId})">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                     <div>
                         <div style="font-size: 0.8rem; color: var(--primary-blue); margin-bottom: 0.25rem;">
-                            <i class="fas fa-folder"></i> ${task.project.name}
+                            <i class="fas fa-folder"></i> ${projectName}
                         </div>
                         <div style="font-weight: 600; font-size: 1.1rem;">${task.title}</div>
                     </div>
-                    <span class="priority-badge priority-${task.priority}">${task.priority}</span>
+                    <div style="display: flex; align-items: center;">
+                        ${assigneesHtml}
+                        <span class="priority-badge priority-${task.priority}">${task.priority}</span>
+                    </div>
                 </div>
                 ${task.description ? `<div style="color: var(--text-secondary); margin-bottom: 0.5rem;">${task.description}</div>` : ''}
                 <div style="display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
@@ -537,26 +593,41 @@ function renderList(tasks) {
     $('#tasks-list').html(html);
 }
 
-function goToProject(projectId) {
-    window.location.href = `/projects/${projectId}`;
-}
-
 function updateTaskStatus(taskId, newStatus) {
+    // Optimistic update
+    const task = allTasks.find(t => t.id == taskId);
+    if(task) {
+        task.status = newStatus;
+        renderTasks(); 
+    }
+
     $.ajax({
-        url: `/api/v1/tasks/${taskId}/status`,
+        url: `/api/v1/tasks/${taskId}`,
         method: 'PUT',
         data: { status: newStatus },
-        success: function() {
+        success: function(response) {
             showToast('Task status updated', 'success');
-            loadMyTasks();
+            // Background refresh
+            $.get('/api/v1/tasks').done(function(r){ allTasks = r.data || r; });
         },
-        error: function() {
+        error: function(xhr) {
             showToast('Failed to update task', 'error');
+            // Revert on error
+            if(task) {
+                task.status = (newStatus === 'done' ? 'in_progress' : 'todo'); 
+                loadTasks();
+            }
         }
     });
 }
 
-// Additional Task Editing Logic
+function goToProject(projectId) {
+    if(projectId) window.location.href = `/projects/${projectId}`;
+}
+
+// ----------------------------------------------------
+// KEY CHANGE: Dynamic Permission and Member Loading
+// ----------------------------------------------------
 function editTask(taskId) {
     // Find task in allTasks
     const task = allTasks.find(t => t.id === taskId);
@@ -565,7 +636,7 @@ function editTask(taskId) {
         return;
     }
 
-
+    // Populate basic fields
     $('#task-id').val(task.id);
     $('#task-title').val(task.title);
     $('#task-description').val(task.description);
@@ -575,65 +646,61 @@ function editTask(taskId) {
     $('#task-deadline').val(task.deadline ? task.deadline.split('T')[0] : '');
     $('#task-project-id').val(task.project_id); 
     
-    // Check permissions & Populate Assignees
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    $('#taskModal').addClass('show'); 
     
-    // Reset visibility first
-    $('#task-title').prop('disabled', false); 
-    $('#group-task-assignee').show();
-    $('#group-task-priority').show();
-    $('#group-task-start-date').show();
-    $('#group-task-deadline').show();
+    // Determine Permissions and Populate Assignees
+    // We fetch the project details to check the user's role in THIS specific project
+    if(task.project_id) {
+        $.get(`/api/v1/projects/${task.project_id}`)
+            .done(function(response) {
+                const project = response.data || response;
+                
+                // Find current user's role in this project
+                const member = project.members ? project.members.find(m => m.id === currentUser.id) : null;
+                const projectRole = member ? member.pivot.role : null;
+                const isGlobalAdmin = currentUser.role === 'admin' || currentUser.is_admin; 
+                
+                // Logic: Restricted if NOT global admin AND is just a 'member' role in project
+                const isRestricted = !isGlobalAdmin && (projectRole === 'member');
 
-    $.get(`/api/v1/projects/${task.project_id}`)
-        .done(function(response) {
-            const project = response.data || response;
-            const member = project.members.find(m => m.id === currentUser.id);
-            
-            const userGlobalRole = currentUser.role; 
-            const projectRole = member ? member.pivot.role : null;
-            
-            // Robust Check: admin override
-            const isAdmin = userGlobalRole === 'admin' || currentUser.is_admin;
-            const isRestricted = !isAdmin && projectRole === 'member';
-
-            // Populate Assignee Options
-            let options = '';
-            if (project.members) {
-                 project.members.forEach(m => {
-                    options += `<option value="${m.id}">${m.name}</option>`;
-                });
-            }
-            $('#task-assignee').html(options);
-            
-            // Set current assignees
-            const currentAssigneeIds = task.assignees ? task.assignees.map(a => a.id) : [];
-            $('#task-assignee').val(currentAssigneeIds);
-            
-            // Initialize Select2 if not already
-             if (!$('#task-assignee').data('select2')) {
-                $('#task-assignee').select2({
-                    placeholder: 'Select assignees',
-                    allowClear: true,
-                    width: '100%'
-                });
-            }
-            $('#task-assignee').trigger('change');
-
-            if (isRestricted) {
-                 $('#task-title').prop('disabled', true); 
-                 
-                 $('#group-task-assignee').hide();
-                 $('#group-task-priority').hide();
-                 $('#group-task-start-date').hide();
-                 $('#group-task-deadline').hide();
-            }
-            
-            $('#taskModal').addClass('show');
-        })
-        .fail(function() {
-             showToast('Failed to load project details', 'error');
-        });
+                if (isRestricted) {
+                    $('#task-restricted-fields').hide();
+                } else {
+                    $('#task-restricted-fields').show();
+                    
+                    // Populate Assignee Options
+                    let options = '';
+                    if (project.members) {
+                         project.members.forEach(m => {
+                            options += `<option value="${m.id}">${m.name}</option>`;
+                        });
+                    }
+                    $('#task-assignee').html(options);
+                    
+                    // Set selected assignees
+                    const currentAssigneeIds = task.assignees ? task.assignees.map(a => a.id) : [];
+                    $('#task-assignee').val(currentAssigneeIds);
+                    
+                    // Initialize Select2 if not already
+                     if (!$('#task-assignee').data('select2')) {
+                        $('#task-assignee').select2({
+                            placeholder: 'Select assignees',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
+                    $('#task-assignee').trigger('change');
+                }
+            })
+            .fail(function() {
+                 showToast('Failed to load project details for permission check', 'error');
+                 // Default to hiding if we can't verify
+                 $('#task-restricted-fields').hide();
+            });
+    } else {
+        // Fallback if no project ID (shouldn't happen for valid tasks)
+        $('#task-restricted-fields').hide();
+    }
 }
 window.editTask = editTask;
 
@@ -644,11 +711,10 @@ function closeTaskModal() {
         $('#task-assignee').select2('destroy');
     }
 }
+window.closeTaskModal = closeTaskModal;
 
-$('#taskForm').submit(function(e) {
-    e.preventDefault();
+function saveTask() {
     const taskId = $('#task-id').val();
-    
     const data = {
         title: $('#task-title').val(),
         description: $('#task-description').val(),
@@ -666,11 +732,18 @@ $('#taskForm').submit(function(e) {
         success: function() {
             showToast('Task updated successfully', 'success');
             closeTaskModal();
-            loadMyTasks(); // Reload tasks
+            loadTasks(); 
         },
         error: function(xhr) {
              showToast(xhr.responseJSON?.message || 'Failed to update task', 'error');
         }
     });
-});
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+</script>
 @endpush
