@@ -456,15 +456,6 @@
 
     <script>
         // ===============================
-        // AUTO REDIRECT JIKA SUDAH LOGIN
-        // ===============================
-        const existingToken = localStorage.getItem('token');
-        if (existingToken) {
-            console.log('Already logged in, redirecting to dashboard...');
-            window.location.href = '/dashboard';
-        }
-
-        // ===============================
         // CAROUSEL
         // ===============================
         let currentSlide = 0;
