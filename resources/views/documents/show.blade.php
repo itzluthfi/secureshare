@@ -8,7 +8,7 @@
         <div class="card">
             <h1>{{ $document->name }}</h1>
             <p style="color: #6B7280; margin: 0.5rem 0;">
-                <strong>Project:</strong> <a href="/projects/{{ $document->project->id }}" style="color: var(--primary);">{{ $document->project->name }}</a>
+                <strong>Project:</strong> <a href="/projects/{{ $document->project->encrypted_id }}" style="color: var(--primary);">{{ $document->project->name }}</a>
             </p>
             <p style="color: #9CA3AF; font-size: 0.9rem;">
                 Uploaded by {{ $document->uploader->name }} on {{ $document->created_at->format('M d, Y') }}

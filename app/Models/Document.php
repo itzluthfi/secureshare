@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasEncryptedIds;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasEncryptedIds;
 
     protected $fillable = [
         'project_id',
@@ -32,6 +33,8 @@ class Document extends Model
         'encryption_key',
         'encryption_iv',
     ];
+
+    protected $appends = ['encrypted_id'];
 
     // Relationships
     public function project()

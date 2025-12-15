@@ -21,15 +21,16 @@ class ProjectController extends Controller
         return view('projects.index');
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, Project $project)
     {
         Log::info('ProjectController@show accessed', [
-            'project_id' => $id,
+            'project_id' => $project->id,
             'ip' => $request->ip()
         ]);
         
-        // Auth will be checked via JavaScript
-        $project = Project::with(['creator', 'members', 'documents', 'tasks'])->findOrFail($id);
+        // Load relationships
+        $project->load(['creator', 'members', 'documents', 'tasks']);
+        
         return view('projects.show', compact('project'));
     }
 

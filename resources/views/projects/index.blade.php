@@ -44,7 +44,7 @@ $(document).ready(function() {
                 let html = '';
                 projects.data.forEach(function(project) {
                     html += `
-                        <div class="card" style="cursor: pointer; transition: transform 0.3s;" onclick="window.location.href='/projects/${project.id}'">
+                        <div class="card" style="cursor: pointer; transition: transform 0.3s;" onclick="window.location.href='/projects/${project.encrypted_id}'">
                             <h3 style="color: var(--primary-blue); margin-bottom: 0.5rem;">${project.name}</h3>
                             <p style="color: #6B7280; margin-bottom: 1rem;">${project.description || 'No description'}</p>
                             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #9CA3AF;">

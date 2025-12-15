@@ -20,15 +20,16 @@ class DocumentController extends Controller
         return view('documents');
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, Document $document)
     {
         Log::info('DocumentController@show accessed', [
-            'document_id' => $id,
+            'document_id' => $document->id,
             'ip' => $request->ip()
         ]);
         
-        // Auth will be checked via JavaScript
-        $document = Document::with(['project', 'uploader', 'versions'])->findOrFail($id);
+        // Load relationships
+        $document->load(['project', 'uploader', 'versions']);
+        
         return view('documents.show', compact('document'));
     }
 }

@@ -40,13 +40,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // Projects
+    // Projects
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
-    Route::get('/projects/{id}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     
     // Documents
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
-    Route::get('/documents/{id}', [DocumentController::class, 'show'])->name('documents.show');
+    Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
     
     // Tasks
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');

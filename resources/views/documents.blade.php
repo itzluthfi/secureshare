@@ -158,7 +158,7 @@ function renderDocuments(documents) {
         const date = new Date(doc.created_at).toLocaleDateString();
         
         html += `
-            <div class="document-item" onclick="viewDocument(${doc.id})">
+            <div class="document-item" onclick="viewDocument('${doc.encrypted_id}')">
                 <div class="document-icon">
                     <i class="fas fa-file"></i>
                 </div>
