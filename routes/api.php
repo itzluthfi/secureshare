@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AuditLogController;
@@ -38,6 +39,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'api.limit:60,1'])->group(funct
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole']);
     });
+
+    // Search
+    Route::get('/search', [SearchController::class, 'index']);
 
     // Projects - explicit routes to avoid name conflict with web routes
     Route::get('/projects', [ProjectController::class, 'index'])->name('api.projects.index');

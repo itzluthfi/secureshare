@@ -427,6 +427,80 @@
                 display: block;
             }
         }
+        }
+        
+        /* Search Results Dropdown */
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s;
+            color: #1f2937;
+            text-decoration: none;
+        }
+
+        .search-result-item:hover {
+            background: #f9fafb;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(79, 127, 255, 0.1);
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.1rem;
+            color: #111827;
+        }
+
+        .search-result-subtitle {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .search-category {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #4b5563;
+            font-weight: 700;
+            background: #f3f4f6;
+        }
     </style>
     @stack('styles')
 </head>
@@ -521,7 +595,8 @@
             
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search projects, tasks, documents...">
+                <input type="text" id="global-search" placeholder="Search projects, tasks, documents..." autocomplete="off">
+                <div id="search-results-dropdown" class="search-results-dropdown"></div>
             </div>
             
             <div class="topnav-actions">
@@ -635,6 +710,80 @@
         $(document).ready(function() {
             loadNotificationCount();
             setInterval(loadNotificationCount, 30000); // Every 30s
+            
+            // Global Search Logic
+            let searchTimeout;
+            $('#global-search').on('input', function() {
+                const query = $(this).val();
+                clearTimeout(searchTimeout);
+                
+                if (query.length < 2) {
+                    $('#search-results-dropdown').hide();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    $.get('/api/v1/search', { q: query })
+                        .done(function(response) {
+                            const results = response || {}; // Handle potential null response
+                            let html = '';
+                            
+                            // Projects
+                            if (results.projects && results.projects.length > 0) {
+                                html += `<div class="search-category">Projects</div>`;
+                                results.projects.forEach(item => {
+                                    html += renderSearchItem(item);
+                                });
+                            }
+                            
+                            // Tasks
+                            if (results.tasks && results.tasks.length > 0) {
+                                html += `<div class="search-category">Tasks</div>`;
+                                results.tasks.forEach(item => {
+                                    html += renderSearchItem(item);
+                                });
+                            }
+                            
+                            // Documents
+                            if (results.documents && results.documents.length > 0) {
+                                html += `<div class="search-category">Documents</div>`;
+                                results.documents.forEach(item => {
+                                    html += renderSearchItem(item);
+                                });
+                            }
+                            
+                            if (html === '') {
+                                 html = `<div style="padding: 1rem; text-align: center; color: var(--text-muted);">No results found</div>`;
+                            }
+                            
+                            $('#search-results-dropdown').html(html).show();
+                        })
+                        .fail(function() {
+                            // Don't show error to user, just hide dropdown
+                        });
+                }, 300);
+            });
+
+            function renderSearchItem(item) {
+                return `
+                <a href="${item.url}" class="search-result-item">
+                    <div class="search-result-icon">
+                        <i class="fas ${item.icon}"></i>
+                    </div>
+                    <div class="search-result-info">
+                        <div class="search-result-title">${item.title}</div>
+                        <div class="search-result-subtitle">${item.subtitle}</div>
+                    </div>
+                </a>
+                `;
+            }
+
+            // Close when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.search-box').length) {
+                    $('#search-results-dropdown').hide();
+                }
+            });
         });
 
     // Logout confirmation with SweetAlert2

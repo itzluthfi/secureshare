@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasEncryptedIds;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,7 @@ use Carbon\Carbon;
 
 class Task extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasEncryptedIds;
 
     const STATUS_TODO = 'todo';
     const STATUS_IN_PROGRESS = 'in_progress';
@@ -29,6 +30,8 @@ class Task extends Model
         'start_date',
         'deadline',
     ];
+    
+    protected $appends = ['encrypted_id'];
 
     protected $casts = [
         'start_date' => 'date',
